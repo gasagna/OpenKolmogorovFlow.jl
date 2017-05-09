@@ -14,4 +14,4 @@ end
     Kinetic energy density associated to vorticity field `U`
 """
 Energy(U::FTField{n}) where n = 
-    sum(abs(U[k, 0])^2 for k=0:n, j=0:n)/4π^2
+    sum(abs(U[k, 0])^2 for k=0:n>>1, j=0:n>>1)/4π^2
