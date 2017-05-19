@@ -137,4 +137,25 @@ end
     ûp = FT(Field(round.(fun(x, y, c, 0, -2), 3)))
     ûm = FT(Field(round.(fun(x, y, c, 0, +2), 3)))
     @test ûp == ûm
+
+    # ~~~ Along both j and k ~~~
+    c = randn() + im*randn()
+    û = FT(Field(fun(x, y, c, 2, 2)))
+    @test û[ 2,  2] ≈ real(c)
+    @test û[-2, -2] ≈ real(c)
+
+    c = randn() + im*randn()
+    û = FT(Field(fun(x, y, c, 1, 2)))
+    @test û[ 2,  1] ≈      c/2
+    @test û[-2, -1] ≈ conj(c/2)
+
+    c = randn() + im*randn()
+    û = FT(Field(fun(x, y, c, 2, 1)))
+    @test û[ 1,  2] ≈      c/2
+    @test û[-1, -2] ≈ conj(c/2)
+
+    c = randn() + im*randn()
+    û = FT(Field(fun(x, y, c, -1, 2)))
+    @test û[ 2, -1] ≈      c/2
+    @test û[-2,  1] ≈ conj(c/2)
 end
