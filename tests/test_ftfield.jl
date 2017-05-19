@@ -94,3 +94,47 @@ end
         end
     end
 end
+
+@testset "transform    " begin
+    N = 4
+    x = linspace(0, 2π, N+1)[1:end-1]'
+    y = linspace(0, 2π, N+1)[1:end-1]
+
+    # ~~~ Along j ~~~
+    # for j < N/2 we count the value twice
+    c = randn() + im*randn()
+    û = FT(Field(fun(x, y, c, 1, 0)))
+    @test û[0,  1] ≈      c/2
+    @test û[0, -1] ≈ conj(c/2)
+
+    # for j = N/2 we count the value in full
+    c = randn() + im*randn()
+    û = FT(Field(fun(x, y, c, 2, 0)))
+    @test û[0,  2] ≈ real(c)
+    @test û[0, -2] ≈ real(c)
+
+    # for j = -N/2 the result should be equal to that of j = +N/2
+    c = randn() + im*randn()
+    ûp = FT(Field(round.(fun(x, y, c, -2, 0), 3)))
+    ûm = FT(Field(round.(fun(x, y, c, +2, 0), 3)))
+    @test ûp == ûm
+
+    # ~~~ Along k ~~~
+    # for k < N/2 we count the value twice
+    c = randn() + im*randn()
+    û = FT(Field(fun(x, y, c, 0, 1)))
+    @test û[ 1, 0] ≈      c/2
+    @test û[-1, 0] ≈ conj(c/2)
+
+    # for k = N/2 we count the value in full
+    c = randn() + im*randn()
+    û = FT(Field(fun(x, y, c, 0, 2)))
+    @test û[ 2, 0] ≈ real(c)
+    @test û[-2, 0] ≈ real(c)
+
+    # for j = -N/2 the result should be equal to that of j = +N/2
+    c = randn() + im*randn()
+    ûp = FT(Field(round.(fun(x, y, c, 0, -2), 3)))
+    ûm = FT(Field(round.(fun(x, y, c, 0, +2), 3)))
+    @test ûp == ûm
+end
