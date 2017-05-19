@@ -1,15 +1,15 @@
 # a complex exponential and its derivatives
-fun(x, y, c::Number, α::Integer, β::Integer) = 
-    0.5.*real(c.*exp.(im*(α.*x .+ β.*y)) .+ conj(c).*exp.(-im*(α.*x .+ β.*y)))
+fun(x, y, c::Number, j::Integer, k::Integer) = 
+    0.5.*real(c.*exp.(im*(j.*x .+ k.*y)) .+ conj(c).*exp.(-im*(j.*x .+ k.*y)))
 
-funx(x, y, c::Number, α::Integer, β::Integer) = 
-    0.5.*real(im.*α.*c.*exp.(im*(α.*x .+ β.*y)) .- im.*α.*conj(c).*exp.(-im*(α.*x .+ β.*y)))
+funx(x, y, c::Number, j::Integer, k::Integer) = 
+    0.5.*real(im.*j.*c.*exp.(im*(j.*x .+ k.*y)) .- im.*j.*conj(c).*exp.(-im*(j.*x .+ k.*y)))
 
-funy(x, y, c::Number, α::Integer, β::Integer) =     
-    0.5.*real(im.*β.*c.*exp.(im*(α.*x .+ β.*y)) .- im.*β.*conj(c).*exp.(-im*(α.*x .+ β.*y)))        
+funy(x, y, c::Number, j::Integer, k::Integer) =     
+    0.5.*real(im.*k.*c.*exp.(im*(j.*x .+ k.*y)) .- im.*k.*conj(c).*exp.(-im*(j.*x .+ k.*y)))        
 
-funxx(x, y, c::Number, α::Integer, β::Integer) = -α^2*fun(x, y, c, α, β)
-funyy(x, y, c::Number, α::Integer, β::Integer) = -β^2*fun(x, y, c, α, β)
+funxx(x, y, c::Number, j::Integer, k::Integer) = -j^2*fun(x, y, c, j, k)
+funyy(x, y, c::Number, j::Integer, k::Integer) = -k^2*fun(x, y, c, j, k)
 
 
 include("test_broadcast.jl")
