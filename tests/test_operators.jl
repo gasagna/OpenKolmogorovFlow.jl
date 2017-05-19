@@ -47,25 +47,12 @@ end
     x = linspace(0, 2π, n+1)[1:n]'
     y = linspace(0, 2π, n+1)[1:n]
     
-    # a complex exponential and its derivatives
-    f(x, y, c::Number, α::Integer, β::Integer) = 
-        0.5.*real(c.*exp.(im*(α.*x .+ β.*y)) .+ conj(c).*exp.(-im*(α.*x .+ β.*y)))
-
-    fx(x, y, c::Number, α::Integer, β::Integer) = 
-        0.5.*real(im.*α.*c.*exp.(im*(α.*x .+ β.*y)) .- im.*α.*conj(c).*exp.(-im*(α.*x .+ β.*y)))
-
-    fy(x, y, c::Number, α::Integer, β::Integer) =     
-        0.5.*real(im.*β.*c.*exp.(im*(α.*x .+ β.*y)) .- im.*β.*conj(c).*exp.(-im*(α.*x .+ β.*y)))        
-
-    fxx(x, y, c::Number, α::Integer, β::Integer) = -α^2*f(x, y, c, α, β)
-    fyy(x, y, c::Number, α::Integer, β::Integer) = -β^2*f(x, y, c, α, β)
-
     # select α, β up to n/2-1, to avoid aliasing
     l = n>>1-1
     for α in rand(-l:l, 20), β in rand(-l:l, 20)
         # construct a random field
         c = rand() + im*rand()
-        u = Field(f(x, y, c, α, β))
+        u = Field(fun(x, y, c, α, β))
 
         # transform to Fourier space
         U = FT(u)
@@ -78,9 +65,9 @@ end
         Uyy = DiffOperator(n, :yy) .* U
 
         # check against analytic value
-        @test IFT(Ux).data  ≈  fx(x, y, c, α, β)
-        @test IFT(Uy).data  ≈  fy(x, y, c, α, β)
-        @test IFT(Uxx).data ≈ fxx(x, y, c, α, β)
-        @test IFT(Uyy).data ≈ fyy(x, y, c, α, β)
+        @test IFT(Ux).data  ≈  funx(x, y, c, α, β)
+        @test IFT(Uy).data  ≈  funy(x, y, c, α, β)
+        @test IFT(Uxx).data ≈ funxx(x, y, c, α, β)
+        @test IFT(Uyy).data ≈ funyy(x, y, c, α, β)
     end
 end
