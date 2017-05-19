@@ -81,7 +81,7 @@ function (Eq::ExplicitTerm{n})(t::Real, Ω::FTField{n}, ∂Ω∂t::FTField{n}) w
     Eq.ForwFFT(Eq.u, ∂Ω∂t)
 
     # ~~~ FORCING TERM ~~~
-    ∂Ω∂t[ Eq.kforcing, 0] -= 0.5*Eq.kforcing
-    ∂Ω∂t[-Eq.kforcing, 0] -= 0.5*Eq.kforcing
+    ∂Ω∂t[ Eq.kforcing, 0] -= Eq.kforcing/2
+    ∂Ω∂t[-Eq.kforcing, 0] -= Eq.kforcing/2
     return nothing
 end
