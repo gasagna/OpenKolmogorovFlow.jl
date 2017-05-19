@@ -1,7 +1,14 @@
 # add method to this function
 import IMEXRKCB: ImcA!
 
-export ImplicitTerm, ExplicitTerm
+export ImplicitTerm, ExplicitTerm, KolmogorovFlowSystem
+
+# Construct Kolmogorov Flow system
+function KolmogorovFlowSystem(n::Int, Re::Real, kforcing::Int=4, FFTWflags::UInt32=FFTW.MEASURE)
+    N = ExplicitTerm(n, kforcing, FFTWflags)
+    L = ImplicitTerm(n, Re)
+    L, N
+end
 
 # The viscous term of the governing equations
 struct ImplicitTerm{n}

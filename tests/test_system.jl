@@ -16,8 +16,7 @@ using IMEXRKCB
     Ω₀ = FTField(n)
     
     # get explicit and implicit parts
-    L = ImplicitTerm(n, Re)
-    N = ExplicitTerm(n, kforcing)
+    L, N = KolmogorovFlowSystem(n, Re, kforcing)
 
     # for each integration scheme
     for scheme in [IMEXRK3R2R(IMEXRKCB3c, Ω₀, false),
