@@ -19,21 +19,21 @@ using IMEXRKCB
     L, N = KolmogorovFlowSystem(n, Re, kforcing)
 
     # for each integration scheme
-    for scheme in [IMEXRK3R2R(IMEXRKCB3c, Ω₀, false),
-                   IMEXRK3R2R(IMEXRKCB3e, Ω₀, false),
-                   IMEXRK4R3R(IMEXRKCB4,  Ω₀, false)]
+    for scheme in [IMEXRK3R2R(IMEXRKCB3c, false, Ω₀),
+                   IMEXRK3R2R(IMEXRKCB3e, false, Ω₀),
+                   IMEXRK4R3R(IMEXRKCB4,  false, Ω₀)]
     
         # define T-time forward map
-        f = forwmap!(N, L, 50, 0.005, scheme)
+        f = integrator(N, L, scheme, 0.005)
 
         # start from some non zero initial condition
         Ω₀ .= 0.01; Ω₀[0, 0] = 0
 
         # monitor the state excited by forcing
-        m = Monitor(Ω₀, Ω->Ω)
+        m = Monitor(Ω->Ω, Ω₀)
     
         # map forward 
-        f(Ω₀, m)
+        f(Ω₀, 50,  m)
         
         # test final value is that predicted by explicit equation
         Δ = m.samples[end] .- laminarflow(n, Re, kforcing)
