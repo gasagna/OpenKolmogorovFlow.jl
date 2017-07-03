@@ -1,7 +1,7 @@
 using Base.Test
 using OpenKolmogorovFlow
 
-@testset "broadcast    " begin
+@testset "broadcast                              " begin
     for n = [2, 4, 10]
         u = FTField(randn(n, n>>1+1) + im*randn(n, n>>1+1))
         v = FTField(randn(n, n>>1+1) + im*randn(n, n>>1+1))
@@ -33,4 +33,17 @@ using OpenKolmogorovFlow
             @test v[i] == u[i]/u[i] + u[i]^2
         end
     end
+end
+
+@testset "broadcast allocation                   " begin
+    n = 10
+    u = FTField(randn(n, n>>1+1) + im*randn(n, n>>1+1))
+    v = FTField(randn(n, n>>1+1) + im*randn(n, n>>1+1))
+    c = 1.0
+
+    # use FTFields and scalar
+    foo(v, u, c) = (v .= u .+ conj.(u) .* c)
+
+    foo(v, u, c)
+    @test (@allocated foo(v, u, c)) == 0 
 end
