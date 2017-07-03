@@ -1,8 +1,7 @@
 using OpenKolmogorovFlow
 using Base.Test
 
-
-@testset "dissipation  " begin
+@testset "dissipation                            " begin
     # test on laminar flow
     Re = rand()
     kf = 4
@@ -27,4 +26,10 @@ using Base.Test
             @test DissipationRate(Ω, Re) ≈ 1/2/Re
         end
     end
+
+    # test no allocations 
+    @test (@allocated DissipationRate(Ω, Re)) == 16
+    @test (@allocated DissipationRate(Ω, Re)) == 16
+    @test (@allocated DissipationRate(Ω, Re)) == 16
+    @test (@allocated DissipationRate(Ω, Re)) == 16
 end
