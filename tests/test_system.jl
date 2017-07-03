@@ -30,13 +30,13 @@ using IMEXRKCB
         Ω₀ .= 0.01; Ω₀[0, 0] = 0
 
         # monitor the state excited by forcing
-        m = Monitor(Ω->Ω, Ω₀)
+        m = Monitor((Ω->Ω, ), Ω₀)
     
         # map forward 
         f(Ω₀, 50,  m)
         
         # test final value is that predicted by explicit equation
-        Δ = m.samples[end] .- laminarflow(n, Re, kforcing)
+        Δ = m.samples[1][end] .- laminarflow(n, Re, kforcing)
         @test maximum(abs, Δ) < 1e-15
     end
 end
