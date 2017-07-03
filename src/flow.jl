@@ -15,14 +15,16 @@ end
 """
 function DissipationRate(U::FTField{n}, Re::Real) where n
     d = n>>1
-    @inbounds begin
-        val  = 2*sum(abs(U[k, j])^2 for k=-d+1:d, j=1:d-1)
-        val +=   sum(abs(U[k, 0])^2 for k=-d+1:d)
-        val +=   sum(abs(U[k, d])^2 for k=-d+1:d)
-        # count properly contribution of extreme cases
-        val += -abs(U[d, d])^2 + 2*abs(U[d, d]/2)^2
-        val += -abs(U[0, d])^2 + 2*abs(U[0, d]/2)^2
-        val += -abs(U[d, 0])^2 + 2*abs(U[d, 0]/2)^2
+    val = zero(Re)
+    for k=-d+1:d
+        for j=1:d-1
+            @inbounds val += 2*abs(U[k, j])^2
+        end
+        @inbounds val +=  abs(U[k, 0])^2 + abs(U[k, d])^2
     end
+    # count properly contribution of extreme cases
+    @inbounds val += -abs(U[d, d])^2 + 2*abs(U[d, d]/2)^2
+    @inbounds val += -abs(U[0, d])^2 + 2*abs(U[0, d]/2)^2
+    @inbounds val += -abs(U[d, 0])^2 + 2*abs(U[d, 0]/2)^2
     val/Re
 end
