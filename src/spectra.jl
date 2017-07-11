@@ -3,9 +3,10 @@ export radial_mean
 # Returns number of bins in which wave vectors fall
 _nbins(n) = (d = n>>1; round(Int, sqrt(d^2 + d^2)))
 
-# Calculate mean of function `f` acting on the amplitudes of the Fourier
-# coefficient, and average over values for all wave vectors that have norm 
-# between `n-1/2` and `n+1/2`. This version does not allocate any memory. 
+# Calculate mean of function `f`, accepting a single complex number argument,
+# acting on the amplitudes of the Fourier coefficients, over the wave vectors
+# that have norm between `n-1/2` and `n+1/2`. The `out` is overwritten 
+# such that the element `n` contains this information.
 function radial_mean!(f, Ω::FTField{n}, out::Vector, counts::Vector{Int}) where n
     # check input vector has correct length
     length(out) == length(counts) || error("wrong input length")
@@ -20,10 +21,11 @@ function radial_mean!(f, Ω::FTField{n}, out::Vector, counts::Vector{Int}) where
     # loop over wave numbers
     for j = -d:d, k = -d:d
         
-        # integer wave vector length
+        # integer wave number
         m = round(Int, sqrt(j^2+k^2))
         
-        # increment except for (0, 0) mode
+        # increment value and count except for `(0, 0)` 
+        # mode, for which `m=0`.
         if m > 0
                out[m] += f(Ω[j, k])
             counts[m] += 1
