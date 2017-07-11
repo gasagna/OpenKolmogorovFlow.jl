@@ -8,5 +8,6 @@ include("fft.jl")
 include("broadcast.jl")
 include("system.jl")
 include("flow.jl")
+include("spectra.jl")
 
 end
