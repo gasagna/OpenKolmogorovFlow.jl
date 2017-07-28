@@ -39,17 +39,17 @@ struct ExplicitTerm{n, T}
            v::Field{n, T, Matrix{T}}
         ∂ω∂x::Field{n, T, Matrix{T}}
         ∂ω∂y::Field{n, T, Matrix{T}}
-      InvFFT
-     ForwFFT
+      InvFFT!
+     ForwFFT!
     function ExplicitTerm{n, T}(kforcing::Int, flags::UInt32, dealias::Bool=true) where {n, T}
         iseven(n) || throw(ArgumentError("`n` must be even, got $n"))
         a, b = FTField(n, Complex{T}), FTField(n, Complex{T})
         c, d = FTField(n, Complex{T}), FTField(n, Complex{T})
         f, g, h, i = Field(n, T), Field(n, T), Field(n, T), Field(n, T)
-        InvFFT, ForwFFT = InverseFFT(a, flags), ForwardFFT(f, flags)
+        InvFFT!, ForwFFT! = InverseFFT(a, flags), ForwardFFT(f, flags)
         new{n, T}(kforcing, a, b, c, d, DiffOperator(n, :x), DiffOperator(n, :y), 
                   DiffOperator(n, :xx), DiffOperator(n, :yy), f, g, h, i, 
-                  InvFFT, ForwFFT)
+                  InvFFT!, ForwFFT!)
     end
 end
 
@@ -75,16 +75,16 @@ function (Eq::ExplicitTerm{n})(t::Real, Ω::FTField{n}, ∂Ω∂t::FTField{n}) w
 
     # ~~~ NONLINEAR TERM ~~
     # inverse transform to physical space into temporaries
-    Eq.InvFFT(   Eq.U, Eq.u)
-    Eq.InvFFT(   Eq.V, Eq.v)
-    Eq.InvFFT(Eq.∂Ω∂x, Eq.∂ω∂x)
-    Eq.InvFFT(Eq.∂Ω∂y, Eq.∂ω∂y)
+    Eq.InvFFT!(Eq.u,    Eq.U)
+    Eq.InvFFT!(Eq.v,    Eq.V)
+    Eq.InvFFT!(Eq.∂ω∂x, Eq.∂Ω∂x)
+    Eq.InvFFT!(Eq.∂ω∂y, Eq.∂Ω∂y)
 
     # multiply in physical space. Overwrite u
     Eq.u .= .- Eq.u.*Eq.∂ω∂x .- Eq.v.*Eq.∂ω∂y
 
     # forward transform to Fourier space into destination
-    Eq.ForwFFT(Eq.u, ∂Ω∂t)
+    Eq.ForwFFT!(Eq.u, ∂Ω∂t)
 
     # ~~~ FORCING TERM ~~~
     ∂Ω∂t[ Eq.kforcing, 0] -= Eq.kforcing/2

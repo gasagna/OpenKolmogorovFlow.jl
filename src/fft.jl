@@ -17,7 +17,7 @@ function ForwardFFT(u::Field{n}, FFTWflags::UInt32=FFTW.MEASURE) where {n}
     ForwardFFT{n, typeof(p)}(p)
 end
 
-function (f::ForwardFFT{n})(u::Field{n}, U::FTField{n}) where {n}
+function (f::ForwardFFT{n})(U::FTField{n}, u::Field{n}) where {n}
     A_mul_B!(U.data, f.plan, u.data)
     U .*= 1/n^2
 end
@@ -33,6 +33,6 @@ function InverseFFT(U::FTField{n}, FFTWflags::UInt32=FFTW.MEASURE) where {n}
     InverseFFT{n, typeof(p)}(p)
 end
 
-function (i::InverseFFT{n})(U::FTField{n}, u::Field{n}) where {n}
+function (i::InverseFFT{n})(u::Field{n}, U::FTField{n}) where {n}
     A_mul_B!(u.data, i.plan, U.data)
 end
