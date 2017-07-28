@@ -1,7 +1,7 @@
 # TODO
 # ~ check that setindex with k and j does not invalidate the fft
 
-export FTField
+export FTField, growto!, shrinkto!
 
 struct FTField{n, T<:Complex, M<:AbstractMatrix{T}} <: AbstractMatrix{T}
     data::M
@@ -59,3 +59,31 @@ Base.IndexStyle(::Type{FTField{n, T, M}}) where {n, T, M} = IndexLinear()
 # allow constructing similar fields. Used by IMEXRKCB to allocate storage.
 Base.similar(U::FTField{n}, T::Type, shape::Tuple{Range, Range}) where n =
     FTField(similar(U.data))
+
+# ~~~ Copy one field to the other, e.g. for zero padding or truncation ~~~
+function growto!(W::FTField{m}, U::FTField{n}) where {m, n}
+    m >= n || throw(ArgumentError("output `W` should be larger than input `U`"))
+    @inbounds begin
+        dU = n>>1
+        W .= 0
+        for j = 0:dU, k = -dU:dU
+            W[k, j] = U[k, j]
+        end
+    end
+    W
+end
+
+function shrinkto!(W::FTField{n}, U::FTField{m}) where {n, m}
+    m >= n || throw(ArgumentError("input `U` should be larger than output `W`"))
+    @inbounds begin
+        dW = n>>1
+        for j = 0:dW, k = -dW:dW
+            W[k, j] = U[k, j]
+        end
+        # enforce symmetries in fft
+        W[dW,  0] = real(W[dW,  0])
+        W[0,  dW] = real(W[0,  dW])
+        W[dW, dW] = real(W[dW, dW])
+    end
+    W
+end

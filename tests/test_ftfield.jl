@@ -159,3 +159,44 @@ end
     @test û[ 2, -1] ≈      c/2
     @test û[-2,  1] ≈ conj(c/2)
 end
+
+@testset "grow/shrink-to!" begin
+    data = Complex{Float64}[1+2im  9+10im 17+0im
+                            3+4im 11+12im 19+20im
+                            5+0im 13+14im 21+0im
+                            3-4im 15+16im 19-20im]
+    u = FTField(data)
+
+    # smaller size
+    v = FTField(2)
+    @test_throws ArgumentError growto!(v, u)
+    
+    # same size
+    v = FTField(4)
+    growto!(v, u)
+    @test v == u
+
+    # larger size
+    v = FTField(6)
+    growto!(v, u)
+    @test v.data == Complex{Float64}[1+2im  9+10im 17+0im   0+0im
+                                     3+4im 11+12im 19+20im  0+0im
+                                     5+0im 13+14im 21+0im   0+0im
+                                     0+0im  0+0im   0+0im   0+0im
+                                     5+0im 13+14im 21+0im   0+0im
+                                     3-4im 15+16im 19-20im  0+0im]
+    
+    # shrink                                     
+    w = FTField(4)
+    shrinkto!(w, v)
+    @test w.data == Complex{Float64}[1+2im  9+10im 17+0im 
+                                     3+4im 11+12im 19+20im
+                                     5+0im 13+14im 21+0im 
+                                     3-4im 15+16im 19-20im]                                     
+
+    # enforce symmetries                                     
+    w = FTField(2)
+    shrinkto!(w, v)
+    @test w.data == Complex{Float64}[1+2im  9+0im
+                                     3+0im 11+0im]
+end
