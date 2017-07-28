@@ -12,8 +12,8 @@ struct ForwardFFT{n, P}
     plan::P
 end
 
-function ForwardFFT(u::Field{n}, FFTWflags::UInt32=FFTW.MEASURE) where {n}
-    p = plan_rfft(u.data, [2, 1], flags=FFTWflags)
+function ForwardFFT(u::Field{n}, flags::UInt32=FFTW.MEASURE) where {n}
+    p = plan_rfft(u.data, [2, 1], flags=flags)
     ForwardFFT{n, typeof(p)}(p)
 end
 
@@ -28,8 +28,8 @@ struct InverseFFT{n, P}
     plan::P
 end
 
-function InverseFFT(U::FTField{n}, FFTWflags::UInt32=FFTW.MEASURE) where {n}
-    p = plan_brfft(U.data, n, [2, 1], flags=FFTWflags)
+function InverseFFT(U::FTField{n}, flags::UInt32=FFTW.MEASURE) where {n}
+    p = plan_brfft(U.data, n, [2, 1], flags=flags)
     InverseFFT{n, typeof(p)}(p)
 end
 
