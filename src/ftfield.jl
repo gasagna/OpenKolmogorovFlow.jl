@@ -33,7 +33,7 @@ end
 @inline function Base.setindex!(U::FTField{n}, val::Number, k::Int, j::Int) where n
     P = U.data
     @boundscheck checkbounds(U, k, j)
-    @inbounds P[KJtoI( k,  j, n)] = rectify(val, j)
+    @inbounds P[KJtoI(k, j, n)] = rectify(val, j)
     val
 end
 
@@ -45,7 +45,7 @@ end
 end
 
 @inline function Base.setindex!(U::FTField, val::Number, i::Int)
-    P = U.data 
+    P = U.data
     @boundscheck checkbounds(P, i)
     @inbounds P[i] = val
     val
