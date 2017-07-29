@@ -53,8 +53,8 @@ end
 
 # `indices` is used for bounds checking
 Base.indices(::FTField{n}) where n = (-n>>1:n>>1, -n>>1:n>>1)
-Base.linearindices(U::FTField) = linearindices(U.data)
-Base.IndexStyle(::Type{FTField{n, T, M}}) where {n, T, M} = IndexLinear()
+Base.linearindices(U::FTField) = eachindex(U.data)
+Base.IndexStyle(::Type{<:FTField}) = IndexLinear()
 
 # allow constructing similar fields. Used by IMEXRKCB to allocate storage.
 Base.similar(U::FTField{n}, T::Type, shape::Tuple{Range, Range}) where n =
