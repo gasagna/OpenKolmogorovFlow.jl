@@ -55,6 +55,7 @@ end
 Base.indices(::FTField{n}) where n = (-n>>1:n>>1, -n>>1:n>>1)
 Base.linearindices(U::FTField) = eachindex(U.data)
 Base.IndexStyle(::Type{<:FTField}) = IndexLinear()
+Base.unsafe_get(U::FTField) = U.data
 
 # allow constructing similar fields. Used by IMEXRKCB to allocate storage.
 Base.similar(U::FTField{n}, T::Type, shape::Tuple{Range, Range}) where n =
