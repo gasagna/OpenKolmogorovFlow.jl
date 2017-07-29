@@ -3,7 +3,7 @@
 
 export FTField, growto!, shrinkto!
 
-struct FTField{n, T<:Complex, M<:AbstractMatrix{T}} <: AbstractMatrix{T}
+struct FTField{n, T<:Complex, M<:AbstractMatrix{T}}
     data::M
     function FTField{n, T, M}(data::M) where {n, T, M}
         checksize(data, n)
