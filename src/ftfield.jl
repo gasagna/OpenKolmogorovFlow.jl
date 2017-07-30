@@ -24,16 +24,14 @@ end
 
 # ~~~ array interface ~~~
 @inline function Base.getindex(U::FTField{n}, k::Int, j::Int) where n
-    P = U.data
     @boundscheck checkbounds(U, k, j)
-    @inbounds ret = P[KJtoI(k, j, n)]
+    @inbounds ret = U.data[KJtoI(k, j, n)]
     rectify(ret, j)
 end
 
 @inline function Base.setindex!(U::FTField{n}, val::Number, k::Int, j::Int) where n
-    P = U.data
     @boundscheck checkbounds(U, k, j)
-    @inbounds P[KJtoI(k, j, n)] = rectify(val, j)
+    @inbounds U.data[KJtoI(k, j, n)] = rectify(val, j)
     val
 end
 
@@ -52,7 +50,6 @@ end
 end
 
 # `indices` is used for bounds checking
-Base.indices(::FTField{n}) where n = (-n>>1:n>>1, -n>>1:n>>1)
 Base.linearindices(U::FTField) = eachindex(U.data)
 Base.IndexStyle(::Type{<:FTField}) = IndexLinear()
 Base.unsafe_get(U::FTField) = U.data
