@@ -15,7 +15,7 @@ promote_containertype(::Type{FTField}, ::Type{Array}) = FTField
 promote_containertype(::Type{Array}, ::Type{FTField}) = FTField
 
 # Extract underlying matrices in the fields and operators and then call broadcast for the arrays. 
-@generated function Base.Broadcast.broadcast!(f, dest::FTField, args::Vararg{Any, M}) where {M}
+@generated function Base.Broadcast.broadcast_c!(f, ::Type{FTField}, ::Type{FTField}, dest, args::Vararg{Any, M}) where {M}
     quote
         $(Expr(:meta, :inline))
         broadcast!(f, unsafe_get(dest), map(unsafe_get, args)...)
