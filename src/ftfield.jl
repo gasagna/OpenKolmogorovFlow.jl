@@ -50,6 +50,7 @@ end
 end
 
 # `indices` is used for bounds checking
+Base.indices(::FTField{n}) where {n} = (d = n>>1; (-d:d, -d:d))
 Base.linearindices(U::FTField) = eachindex(U.data)
 Base.IndexStyle(::Type{<:FTField}) = IndexLinear()
 Base.unsafe_get(U::FTField) = U.data
