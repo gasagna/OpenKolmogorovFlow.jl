@@ -54,3 +54,4 @@ end
 Base.indices(f::Field{n})       where n = (0:n-1, 0:n-1)
 Base.linearindices(f::Field{n}) where n =  1:n^2
 Base.IndexStyle(::Type{Field}) = Base.IndexLinear()
+Base.similar(u::Field) = Field(similar(u.data))
