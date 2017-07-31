@@ -95,75 +95,88 @@ end
     end
 end
 
+# this is meant to be a documentation of the properties of the FFT 
+# for a transform of 2D data over a grid with even number of points.
 @testset "transform    " begin
-    N = 4
-    x = linspace(0, 2π, N+1)[1:end-1]'
-    y = linspace(0, 2π, N+1)[1:end-1]
-
-    # ~~~ Along j ~~~
-    # for j < N/2 we count the value twice
-    c = randn() + im*randn()
-    û = FT(Field(fun(x, y, c, 1, 0)))
-    @test û[0,  1] ≈      c/2
-    @test û[0, -1] ≈ conj(c/2)
-
-    # for j = N/2 we count the value in full
-    c = randn() + im*randn()
-    û = FT(Field(fun(x, y, c, 2, 0)))
-    @test û[0,  2] ≈ real(c)
-    @test û[0, -2] ≈ real(c)
-
-    # for j = -N/2 the result should be equal to that of j = +N/2
-    c = randn() + im*randn()
-    ûp = FT(Field(round.(fun(x, y, c, -2, 0), 3)))
-    ûm = FT(Field(round.(fun(x, y, c, +2, 0), 3)))
-    @test ûp == ûm
+    n = 4
+    x, y = make_grid(n)
 
     # ~~~ Along k ~~~
-    # for k < N/2 we count the value twice
-    c = randn() + im*randn()
-    û = FT(Field(fun(x, y, c, 0, 1)))
-    @test û[ 1, 0] ≈      c/2
-    @test û[-1, 0] ≈ conj(c/2)
+    # for k < N/2 the transform has half the value
+    f = cos.(0.*x .+ y) .+ 2.*sin.(0.*x .+ y)
+    U = FFT(Field(f))
+    @test U[ 1, 0] ≈ 0.5*(1 - 2*im)
+    @test U[-1, 0] ≈ 0.5*(1 + 2*im)
 
-    # for k = N/2 we count the value in full
-    c = randn() + im*randn()
-    û = FT(Field(fun(x, y, c, 0, 2)))
-    @test û[ 2, 0] ≈ real(c)
-    @test û[-2, 0] ≈ real(c)
+    # for k = N/2 we count the value in full. The coefficient
+    # must be real, hence the sine part gets killed.
+    f = cos.(0.*x .+ 2.*y) .+ 2.*sin.(0.*x .+ 2.*y)
+    U = FFT(Field(f))
+    @test U[ 2, 0] ≈ 1
+    @test U[-2, 0] ≈ 1
+
+    # for k = 0 we count the value in full. The coefficient
+    # must be real
+    f = 2.0.*cos.(0.*x .+ 0.*y)
+    U = FFT(Field(f))
+    @test U[ 0, 0] ≈ 2.0
+
+    # for k = -N/2 the result should be equal to that of k = +N/2
+    fp = cos.(0.*x .+ 2.*y); Up = FFT(Field(f))
+    fm = cos.(0.*x .- 2.*y); Um = FFT(Field(f))
+    @test Up == Um
+
+    # ~~~ Along j ~~~
+    # for j < N/2 the transform has half the value
+    f = cos.(1.*x .+ 0.*y) .+ 2.*sin.(1.*x .+ 0.*y)
+    U = FFT(Field(f))
+    @test U[0,  1] ≈ 0.5*(1 - 2*im)
+    @test U[0, -1] ≈ 0.5*(1 + 2*im)
+
+    # for j = N/2 we count the value in full. The coefficient
+    # must be real, hence the sine part gets killed.
+    f = cos.(2.*x .+ 0.*y) .+ 2.*sin.(2.*x .+ 0.*y)
+    U = FFT(Field(f))
+    @test U[0,  2] ≈ 1
+    @test U[0, -2] ≈ 1
 
     # for j = -N/2 the result should be equal to that of j = +N/2
-    c = randn() + im*randn()
-    ûp = FT(Field(round.(fun(x, y, c, 0, -2), 3)))
-    ûm = FT(Field(round.(fun(x, y, c, 0, +2), 3)))
-    @test ûp == ûm
+    fp = cos.(+ 2.*x .+ 0.*y); Up = FFT(Field(f))
+    fm = cos.(- 2.*x .+ 0.*y); Um = FFT(Field(f))
+    @test Up == Um
 
     # ~~~ Along both j and k ~~~
-    c = randn() + im*randn()
-    û = FT(Field(fun(x, y, c, 2, 2)))
-    @test û[ 2,  2] ≈ real(c)
-    @test û[-2, -2] ≈ real(c)
+    f = cos.(1.*x .+ 1.*y) .+ 2.*sin.(1.*x .+ 1.*y)
+    U = FFT(Field(f))
+    @test U[ 1,  1] ≈ 0.5*(1 - 2im)
+    @test U[-1, -1] ≈ 0.5*(1 + 2im)
 
-    c = randn() + im*randn()
-    û = FT(Field(fun(x, y, c, 1, 2)))
-    @test û[ 2,  1] ≈      c/2
-    @test û[-2, -1] ≈ conj(c/2)
+    f = cos.(1.*x .+ 2.*y) .+ 3.*sin.(1.*x .+ 2.*y)
+    U = FFT(Field(f))
+    @test U[ 2,  1] ≈ 0.5*(1 - 3im)
+    @test U[-2, -1] ≈ 0.5*(1 + 3im)
 
-    c = randn() + im*randn()
-    û = FT(Field(fun(x, y, c, 2, 1)))
-    @test û[ 1,  2] ≈      c/2
-    @test û[-1, -2] ≈ conj(c/2)
+    f = cos.(2.*x .+ 1.*y) .+ 4.*sin.(2.*x .+ 1.*y)
+    U = FFT(Field(f))
+    @test U[ 1,  2] ≈ 0.5*(1 - 4im)
+    @test U[-1, -2] ≈ 0.5*(1 + 4im)
 
-    c = randn() + im*randn()
-    û = FT(Field(fun(x, y, c, -1, 2)))
-    @test û[ 2, -1] ≈      c/2
-    @test û[-2,  1] ≈ conj(c/2)
+    f = 2.*cos.(2.*x .- 1.*y) .+ 1.*sin.(2.*x .- 1.*y)
+    U = FFT(Field(f))
+    @test U[-1,  2] ≈ 0.5*(2 - 1im)
+    @test U[ 1, -2] ≈ 0.5*(2 + 1im)
+
+    # the corner wave number is real
+    f = cos.(2.*x .+ 2.*y) .+ 4.*sin.(2.*x .+ 2.*y)
+    U = FFT(Field(f))
+    @test U[ 2,  2] ≈ 1
+    @test U[-2, -2] ≈ 1
 end
 
 @testset "grow/shrink-to!" begin
-    data = Complex{Float64}[1+2im  9+10im 17+0im
+    data = Complex{Float64}[1+0im  9+10im 16+0im
                             3+4im 11+12im 19+20im
-                            5+0im 13+14im 21+0im
+                            6+0im 13+14im 22+0im
                             3-4im 15+16im 19-20im]
     u = FTField(data)
 
@@ -179,13 +192,48 @@ end
     # larger size
     v = FTField(6)
     growto!(v, u)
-    @test v.data == Complex{Float64}[1+2im  9+10im 17+0im   0+0im
-                                     3+4im 11+12im 19+20im  0+0im
-                                     5+0im 13+14im 21+0im   0+0im
-                                     0+0im  0+0im   0+0im   0+0im
-                                     5+0im 13+14im 21+0im   0+0im
-                                     3-4im 15+16im 19-20im  0+0im]
-    
+
+    # note how the frequencies (2, 0), (0, 2) and (2, 2) are halved
+    @test v.data == Complex{Float64}[  1+0im  9+10im  8+0im    0+0im
+                                       3+4im 11+12im  19+20im  0+0im
+                                       3+0im 13+14im  11+0im   0+0im
+                                       0+0im  0+0im    0+0im   0+0im
+                                       3+0im  0+0im    0+0im   0+0im
+                                       3-4im  0+0im    0+0im   0+0im]
+
+    # define a field that can be contained on a 4×4 grid, or more.
+    # Note that some terms are zero, because some of the DFT 
+    # coefficients of real data are purely real, e.g. the (0, 0)
+    # frequency.
+    function fun(n) 
+        x, y = make_grid(n)
+        u   = 1.*cos.(0.*y .+ 0.*x) 
+        u .+= 3.*cos.(0.*y .+ 1.*x) .+ 4.*sin.( 0.*y .+ 1.*x)
+        u .+= 5.*cos.(0.*y .+ 2.*x) 
+        u .+= 2.*cos.(1.*y .+ 0.*x) .+ 1.*sin.( 1.*y .+ 0.*x)
+        u .+= 5.*cos.(1.*y .+ 1.*x) .+ 2.*sin.( 1.*y .+ 1.*x)
+        u .+= 9.*cos.(1.*y .+ 2.*x) .+ 3.*sin.( 1.*y .+ 2.*x)
+        u .+= 7.*cos.(2.*y .+ 0.*x) 
+        u .+= 1.*cos.(2.*y .+ 1.*x) .+ 3.*sin.( 2.*y .+ 1.*x)
+        u .+= 4.*cos.(2.*y .+ 2.*x) 
+        x, y, u
+    end                   
+    # define field on 4x4, then go to Fourier space  
+    x, y, u_small = fun(4)           
+    U_small = FFT(Field(u_small))     
+
+    # define same field on larger grid, then go to Fourier space
+    for n = [6, 8, 10]
+        x, y, u_large = fun(n)
+        U_large = FFT(Field(u_large))
+
+        # grow the 4x4 DFT to a nxn DFT
+        U_large_g = growto!(FTField(n), U_small)
+        u_large_g = IFFT(U_large_g)
+
+        # these should be equal
+        @test u_large ≈ u_large_g.data
+    end
     # shrink                                     
     w = FTField(4)
     shrinkto!(w, v)
