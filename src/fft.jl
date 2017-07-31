@@ -1,5 +1,14 @@
 export FFT, IFFT, ForwardFFT!, InverseFFT!, even_dealias_size
 
+# ~~~ UTILS ~~~
+
+# Return next even number. 
+_next_even(n::Int) = ifelse(iseven(n), n, n+1)
+
+# Return even `m`, the minimum size of a `Field{m}` that 
+# avoids aliasing on a `FTField{n}` of size `n`.
+even_dealias_size(n::Int) = _next_even(3n>>1 + 1)
+
 # ~~~ ALLOCATING VERSIONS - Always Aliased ~~~ 
 # We need the copy on IFFT because irfft does not preserve input
  FFT(u::Field{n})   where {n} = ForwardFFT!(FTField{n}, similar(u))(FTField(n),    u)
