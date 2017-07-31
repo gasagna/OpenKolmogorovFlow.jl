@@ -56,8 +56,8 @@ Base.IndexStyle(::Type{<:FTField}) = IndexLinear()
 Base.unsafe_get(U::FTField) = U.data
 
 # allow constructing similar fields. Used by IMEXRKCB to allocate storage.
-Base.similar(U::FTField{n}, T::Type, shape::Tuple{Range, Range}) where n =
-    FTField(similar(U.data))
+# TODO. allow, different, type and shape
+Base.similar(U::FTField) = FTField(similar(U.data))
 
 # ~~~ Copy one field to the other, e.g. for zero padding or truncation ~~~
 function growto!(W::FTField{m}, U::FTField{n}) where {m, n}
