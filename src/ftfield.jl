@@ -60,14 +60,26 @@ Base.unsafe_get(U::FTField) = U.data
 Base.similar(U::FTField) = FTField(similar(U.data))
 
 # ~~~ Copy one field to the other, e.g. for zero padding or truncation ~~~
+
+# same size is just a copy
+growto!(W::FTField{n}, U::FTField{n}) where {n} = W .= U
+
+# different size requires special handling of boundary terms
 function growto!(W::FTField{m}, U::FTField{n}) where {m, n}
     m >= n || throw(ArgumentError("output `W` should be larger than input `U`"))
     @inbounds begin
         dU = n>>1
         W .= 0
-        for j = 0:dU, k = -dU:dU
+        for j = 0:dU, k = 0:dU
             W[k, j] = U[k, j]
         end
+        # make sure we preserve the appropriate weight for extreme frequencies
+        W[dU,  0] *= 0.5
+        W[0,  dU] *= 0.5
+        W[dU, dU] *= 0.5
+        for k = -dU:0
+            W[k, 0] = conj(W[-k, 0])
+        end    
     end
     W
 end
