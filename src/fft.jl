@@ -1,8 +1,9 @@
 export FFT, IFFT, ForwardFFT!, InverseFFT!, even_dealias_size
 
-# ~~~ ALLOCATING VERSION ~~~ 
- FT(u::Field{n})   where n = FTField( rfft(u.data,    [2, 1])/n^2)
-IFT(U::FTField{n}) where n =   Field(brfft(U.data, n, [2, 1]))
+# ~~~ ALLOCATING VERSIONS - Always Aliased ~~~ 
+# We need the copy on IFFT because irfft does not preserve input
+ FFT(u::Field{n})   where {n} = ForwardFFT!(FTField{n}, similar(u))(FTField(n),    u)
+IFFT(U::FTField{n}) where {n} = InverseFFT!(Field{n},   similar(U))(Field(n), copy(U))
 
 
 # ~~~ NON ALLOCATING VERSION ~~~
