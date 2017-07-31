@@ -133,3 +133,38 @@ end
                             0.0+0.0im  0.0+0.0im  0.0+0.0im
                             0.0+0.0im  0.0+0.0im  0.0+0.0im] 
 end
+
+@testset "advanced interface                     " begin
+    for n = [4, 6, 8, 64]
+        # define cos(n/2y)
+        U = FTField(n)   
+        U[n>>1, 0] = 1
+
+        # define fields for dealiased  calculations
+        u_dealiased = Field(even_dealias_size(n))
+
+        # define de-aliased plans
+        ip_dealiased! = InverseFFT!(typeof(u_dealiased), U)
+
+        # execute plan
+        ip_dealiased!(u_dealiased, U)
+
+        # square
+        u_dealiased .*= u_dealiased
+
+        # Fourier transform, then shrink to a n x n grid
+        U² = shrinkto!(FTField(n), FFT(u_dealiased))
+
+        # note the mean is correctly calculated, but clearly we
+        # miss the frequency at wave number 4
+        @test U²[0, 0] ≈ 0.5
+
+        # test all others frequencies are zero
+        U²[0, 0] = 0
+        @test maximum(abs, U².data) < 1e-16
+    end
+
+    # what about a wave a lower frequency? does it alias
+    # test product of two waves.
+    # test ForwardFFT!
+end
