@@ -1,10 +1,9 @@
-using Base.Test
 using OpenKolmogorovFlow
 using IMEXRKCB
 
 # Test that solution converges to the 
 # laminar flow for small Reynolds numbers
-@testset "laminar flow " begin
+@testset "laminar flow                           " begin
     # example dimension
     n = 10
 

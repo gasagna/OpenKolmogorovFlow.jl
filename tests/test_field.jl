@@ -1,13 +1,13 @@
 using OpenKolmogorovFlow
 using Base.Test
 
-@testset "input type   " begin
+@testset "input type                             " begin
     @test_throws ArgumentError Field(5)
     @test_throws ArgumentError Field(randn(4, 5))
     @test_throws ArgumentError Field(randn(4, 6))
 end
 
-@testset "indexing     " begin
+@testset "indexing                               " begin
     # getindex
     u = Field([0  4  8 12
                1  5  9 13

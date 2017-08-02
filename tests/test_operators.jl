@@ -1,7 +1,7 @@
 using Base.Test
 using OpenKolmogorovFlow
 
-@testset "derivatives  " begin
+@testset "derivatives                            " begin
     
     # create data
     data = [1+2im  9+10im 17+0im
@@ -40,7 +40,7 @@ using OpenKolmogorovFlow
                            -3+4im -15-16im -19+20im]
 end
 
-@testset "analytic     " begin
+@testset "analytic                               " begin
 
     # make grid
     n = 10

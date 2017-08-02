@@ -1,7 +1,7 @@
 using OpenKolmogorovFlow
 using Base.Test
 
-@testset "input        " begin
+@testset "input                                  " begin
     @test_throws TypeError     FTField(   rand(5, 5))
     @test_throws ArgumentError FTField(5)
     @test_throws ArgumentError FTField(im*rand(5, 5))
@@ -10,7 +10,7 @@ using Base.Test
     @test_throws ArgumentError FTField(im*rand(4, 2))
 end
 
-@testset "symmetries   " begin
+@testset "symmetries                             " begin
     for n = [2, 24]
         d = n>>1
         U = FTField(rfft(randn(n, n), [2, 1]))
@@ -20,7 +20,7 @@ end
     end
 end
 
-@testset "cartesian    " begin
+@testset "cartesian                              " begin
     # construct data with appropriate symmetries
     data = [1+2im  9+10im 17+0im
             3+4im 11+12im 19+20im
@@ -67,7 +67,7 @@ end
     end
 end
 
-@testset "symmetry     " begin
+@testset "symmetry                               " begin
     for n = [2, 24]
         d = n>>1
         U = FTField(rfft(randn(n, n), [2, 1]))
@@ -77,7 +77,7 @@ end
     end
 end
 
-@testset "linear       " begin
+@testset "linear                                 " begin
     data = rfft(randn(6, 6), [2, 1])
     u = FTField(data)
     for i in 1:length(data)
@@ -85,7 +85,7 @@ end
     end
 end
 
-@testset "similar      " begin
+@testset "similar                                " begin
     for n = [2, 4, 8]
         for T in [Float64, Float32]
             U = FTField(n, Complex{T})
@@ -97,7 +97,7 @@ end
 
 # this is meant to be a documentation of the properties of the FFT 
 # for a transform of 2D data over a grid with even number of points.
-@testset "transform    " begin
+@testset "transform                              " begin
     n = 4
     x, y = make_grid(n)
 
