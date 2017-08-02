@@ -1,13 +1,13 @@
 using OpenKolmogorovFlow
 using Base.Test
 
-@testset "input type   " begin
+@testset "input type                             " begin
     @test_throws ArgumentError Field(5)
     @test_throws ArgumentError Field(randn(4, 5))
     @test_throws ArgumentError Field(randn(4, 6))
 end
 
-@testset "indexing     " begin
+@testset "indexing                               " begin
     # getindex
     u = Field([0  4  8 12
                1  5  9 13
@@ -36,5 +36,12 @@ end
     for i = 1:16
         u[i] = 2i
         @test u[i] == 2i
+    end
+end
+
+@testset "fieldsize                              " begin
+    for n in 2:2:10
+        @test fieldsize(Field(n)) == n
+        @test fieldsize(Field{n}) == n
     end
 end

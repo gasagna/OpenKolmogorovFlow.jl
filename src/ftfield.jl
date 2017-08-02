@@ -1,7 +1,7 @@
 # TODO
 # ~ check that setindex with k and j does not invalidate the fft
 
-export FTField
+export FTField, growto!, shrinkto!, fieldsize
 
 struct FTField{n, T<:Complex, M<:AbstractMatrix{T}} <: AbstractMatrix{T}
     data::M
@@ -10,6 +10,9 @@ struct FTField{n, T<:Complex, M<:AbstractMatrix{T}} <: AbstractMatrix{T}
         new(data)
     end
 end
+
+fieldsize(::Type{FTField{n}}) where {n} = n
+fieldsize(::FTField{n})       where {n} = n
 
 FTField(n::Int) = FTField(n, Complex{Float64})
 FTField(n::Int, ::Type{T}) where T = FTField(zeros(T, n, n>>1+1))
@@ -24,16 +27,14 @@ end
 
 # ~~~ array interface ~~~
 @inline function Base.getindex(U::FTField{n}, k::Int, j::Int) where n
-    P = U.data
     @boundscheck checkbounds(U, k, j)
-    @inbounds ret = P[KJtoI(k, j, n)]
+    @inbounds ret = U.data[KJtoI(k, j, n)]
     rectify(ret, j)
 end
 
 @inline function Base.setindex!(U::FTField{n}, val::Number, k::Int, j::Int) where n
-    P = U.data
     @boundscheck checkbounds(U, k, j)
-    @inbounds P[KJtoI( k,  j, n)] = rectify(val, j)
+    @inbounds U.data[KJtoI(k, j, n)] = rectify(val, j)
     val
 end
 
@@ -45,17 +46,61 @@ end
 end
 
 @inline function Base.setindex!(U::FTField, val::Number, i::Int)
-    P = U.data 
+    P = U.data
     @boundscheck checkbounds(P, i)
     @inbounds P[i] = val
     val
 end
 
 # `indices` is used for bounds checking
-Base.indices(::FTField{n}) where n = (-n>>1:n>>1, -n>>1:n>>1)
-Base.linearindices(U::FTField) = linearindices(U.data)
-Base.IndexStyle(::Type{FTField{n, T, M}}) where {n, T, M} = IndexLinear()
+Base.indices(::FTField{n}) where {n} = (d = n>>1; (-d:d, -d:d))
+Base.linearindices(U::FTField) = eachindex(U.data)
+Base.IndexStyle(::Type{<:FTField}) = IndexLinear()
+Base.unsafe_get(U::FTField) = U.data
 
 # allow constructing similar fields. Used by IMEXRKCB to allocate storage.
-Base.similar(U::FTField{n}, T::Type, shape::Tuple{Range, Range}) where n =
-    FTField(similar(U.data))
+# TODO. allow, different, type and shape
+Base.similar(U::FTField) = FTField(similar(U.data))
+
+# ~~~ Copy one field to the other, e.g. for zero padding or truncation ~~~
+
+# same size is just a copy
+growto!(W::FTField{n}, U::FTField{n}) where {n} = W .= U
+
+# different size requires special handling of boundary terms
+function growto!(W::FTField{m}, U::FTField{n}) where {m, n}
+    m >= n || throw(ArgumentError("output `W` should be larger or equal than input `U`"))
+    @inbounds begin
+        dU = n>>1
+        W .= 0
+        for j = 0:dU, k = 0:dU
+            W[k, j] = U[k, j]
+        end
+        # make sure we preserve the appropriate weight for extreme frequencies
+        W[dU,  0] *= 0.5
+        W[0,  dU] *= 0.5
+        W[dU, dU] *= 0.5
+        for k = -dU:0
+            W[k, 0] = conj(W[-k, 0])
+        end    
+    end
+    W
+end
+
+# same size is a copy
+shrinkto!(W::FTField{n}, U::FTField{n}) where {n} = W .= U
+
+function shrinkto!(W::FTField{n}, U::FTField{m}) where {n, m}
+    m >= n || throw(ArgumentError("input `U` should be larger or equal than output `W`"))
+    @inbounds begin
+        dW = n>>1
+        for j = 0:dW, k = (-dW+1):dW
+            W[k, j] = U[k, j]
+        end
+        # extreme frequencies count twice
+        W[dW,  0] = 2*real(W[dW,  0])
+        W[0,  dW] = 2*real(W[0,  dW])
+        W[dW, dW] = 2*real(W[dW, dW])
+    end
+    W
+end

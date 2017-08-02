@@ -1,5 +1,4 @@
-# TODO
-export Field
+export Field, fieldsize, make_grid
 
 struct Field{n, T<:Real, M<:AbstractMatrix{T}} <: AbstractMatrix{T}
     data::M
@@ -20,6 +19,9 @@ function checksize(data::AbstractMatrix{<:Real}, n::Int)
     M == n    || throw(ArgumentError("wrong row number, got $M, should be $n"))
     N == n    || throw(ArgumentError("wrong column number, got $N, should be $n"))
 end
+
+fieldsize(::Type{Field{n}}) where {n} = n
+fieldsize(::Field{n})       where {n} = n
 
 # ~~~ array interface ~~~
 
@@ -54,3 +56,12 @@ end
 Base.indices(f::Field{n})       where n = (0:n-1, 0:n-1)
 Base.linearindices(f::Field{n}) where n =  1:n^2
 Base.IndexStyle(::Type{Field}) = Base.IndexLinear()
+Base.similar(u::Field) = Field(similar(u.data))
+
+# ~~~ GRID FUNCTIONALITY ~~~
+function make_grid(n)
+    Δ = 2π/n
+    x = reshape(collect(0:Δ:2π-Δ), 1, n)
+    y = reshape(collect(0:Δ:2π-Δ), n, 1)
+    return x, y
+end

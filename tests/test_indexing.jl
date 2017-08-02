@@ -1,7 +1,7 @@
 using Base.Test
 using OpenKolmogorovFlow
 
-@testset "ItoK         " begin
+@testset "ItoK                                   " begin
     # these are the wave numbers for k
     data_k = [0  0  0
               1  1  1
@@ -12,7 +12,7 @@ using OpenKolmogorovFlow
     end
 end
 
-@testset "ItoJ         " begin
+@testset "ItoJ                                   " begin
     # these are the wave numbers for j
     data_j = [0  1  2
               0  1  2
@@ -23,7 +23,7 @@ end
     end
 end
 
-@testset "KJtoI        " begin
+@testset "KJtoI                                  " begin
     @test OpenKolmogorovFlow.KJtoI( 0, -2, 4) ==  9
     @test OpenKolmogorovFlow.KJtoI( 1, -2, 4) == 12
     @test OpenKolmogorovFlow.KJtoI( 2, -2, 4) == 11
@@ -55,7 +55,7 @@ end
     @test OpenKolmogorovFlow.KJtoI(-1,  2, 4) == 12
 end
 
-@testset "rectify      " begin
+@testset "rectify                                " begin
     @test OpenKolmogorovFlow.rectify(1,   1)     == 1
     @test OpenKolmogorovFlow.rectify(1,   0)     == 1
     @test OpenKolmogorovFlow.rectify(1,  -1)     == 1
