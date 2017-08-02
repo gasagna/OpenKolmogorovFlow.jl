@@ -87,17 +87,20 @@ function growto!(W::FTField{m}, U::FTField{n}) where {m, n}
     W
 end
 
+# same size is a copy
+shrinkto!(W::FTField{n}, U::FTField{n}) where {n} = W .= U
+
 function shrinkto!(W::FTField{n}, U::FTField{m}) where {n, m}
-    m >= n || throw(ArgumentError("input `U` should be larger than output `W`"))
+    m >= n || throw(ArgumentError("input `U` should be larger or equal than output `W`"))
     @inbounds begin
         dW = n>>1
-        for j = 0:dW, k = -dW:dW
+        for j = 0:dW, k = (-dW+1):dW
             W[k, j] = U[k, j]
         end
-        # enforce symmetries in fft
-        W[dW,  0] = real(W[dW,  0])
-        W[0,  dW] = real(W[0,  dW])
-        W[dW, dW] = real(W[dW, dW])
+        # extreme frequencies count twice
+        W[dW,  0] = 2*real(W[dW,  0])
+        W[0,  dW] = 2*real(W[0,  dW])
+        W[dW, dW] = 2*real(W[dW, dW])
     end
     W
 end
