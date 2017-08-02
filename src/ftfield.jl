@@ -69,7 +69,7 @@ growto!(W::FTField{n}, U::FTField{n}) where {n} = W .= U
 
 # different size requires special handling of boundary terms
 function growto!(W::FTField{m}, U::FTField{n}) where {m, n}
-    m >= n || throw(ArgumentError("output `W` should be larger than input `U`"))
+    m >= n || throw(ArgumentError("output `W` should be larger or equal than input `U`"))
     @inbounds begin
         dU = n>>1
         W .= 0
