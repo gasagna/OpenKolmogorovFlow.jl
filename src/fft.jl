@@ -43,7 +43,7 @@ ForwardFFT!(::Type{<:FTField}, u::Field{m}, flags::UInt32=FFTW.MEASURE) where {m
 
 # different size - use temporary and shrink
 (f::ForwardFFT!{m})(U::FTField, u::Field{m}) where {m} = 
-    (shrinkto!(U, f(f.tmp, u)); U .*= 1/m^2; U)    
+    shrinkto!(U, f(f.tmp, u))    
 
 
 # ~~~ INVERSE TRANSFORM ~~~
