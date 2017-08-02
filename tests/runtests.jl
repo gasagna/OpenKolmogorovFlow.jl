@@ -11,6 +11,13 @@ funy(x, y, c::Number, j::Integer, k::Integer) =
 funxx(x, y, c::Number, j::Integer, k::Integer) = -j^2*fun(x, y, c, j, k)
 funyy(x, y, c::Number, j::Integer, k::Integer) = -k^2*fun(x, y, c, j, k)
 
+# an useful macro for printing arrays
+macro display(ex)
+    quote
+        display($(esc(ex)))
+        println()
+    end
+end
 
 include("test_broadcast.jl")
 include("test_field.jl")
