@@ -1,13 +1,6 @@
 using OpenKolmogorovFlow
 using Base.Test
 
-macro display(ex)
-    quote
-        display($(esc(ex)))
-        println()
-    end
-end
-
 @testset "allocating - some tests                " begin 
     # make grid
     n = 4
@@ -163,8 +156,118 @@ end
         U²[0, 0] = 0
         @test maximum(abs, U².data) < 1e-16
     end
+end
 
-    # what about a wave a lower frequency? does it alias
-    # test product of two waves.
-    # test ForwardFFT!
+# try squaring a lower frequency
+@testset "lower frequency                        " begin
+    n = 6
+    U = FTField(n)   
+    
+    # sin(2y)^2 = 0.5*(1 - cos(4y))
+    U[ 2, 0] =  0.5*im
+    U[-2, 0] = -0.5*im
+
+    # define fields for dealiased  calculations
+    u_dealiased = Field(even_dealias_size(n))
+
+    # define de-aliased plans
+    ip_dealiased! = InverseFFT!(typeof(u_dealiased), U)
+
+    # execute plan
+    ip_dealiased!(u_dealiased, U)
+
+    # square
+    u_dealiased .*= u_dealiased
+
+    # Fourier transform, then shrink to a n x n grid
+    U² = shrinkto!(FTField(n), FFT(u_dealiased))
+
+    # note the mean is correctly calculated, but clearly we
+    # miss the frequency at wave number 4
+    @test U²[0, 0] ≈ 0.5
+    U²[0, 0] = 0
+    @test maximum(abs, U².data) < 1e-16
+end
+
+@testset "product of two waves                   " begin
+    n = 6
+    U = FTField(n)   
+    V = FTField(n)   
+    
+    # product of two waves
+    A = 1+5im  
+    B = 2-3im  
+    U[ 1,  1] = A  
+    V[ 2,  3] = B 
+
+    # define fields for dealiased  calculations
+    u_dealiased = Field(even_dealias_size(n))
+    v_dealiased = Field(even_dealias_size(n))
+
+    # define de-aliased plans
+    ip_dealiased! = InverseFFT!(typeof(u_dealiased), U)
+    fp_dealiased! = ForwardFFT!(typeof(U), u_dealiased)
+
+    # execute plan
+    ip_dealiased!(u_dealiased, U)
+    ip_dealiased!(v_dealiased, V)
+
+    # product
+    u_dealiased .*= v_dealiased
+
+    # Fourier transform, then shrink to a n x n grid
+    UV = fp_dealiased!(FTField(n), u_dealiased)
+
+    # sum of frequencies is out of bounds
+    # UV[3, 4] == A*B
+
+    # difference of frequencies
+    @test UV[1, 2] == conj(A)*B
+
+    # ensure there is nothing else
+    UV[1, 2] = 0
+    @test maximum(abs, UV.data) < 1e-14
+end
+
+@testset "ForwardFFT!                            " begin
+    @testset "aliased calculations               " begin
+        # define field
+        U = FTField(4)
+        u = Field(4)
+        x, y = make_grid(4)
+        u.data .= cos.(x .+ y) .+ sin.(x .+ y)
+
+        # define aliased transform, same size
+        f! = ForwardFFT!(FTField{4}, u)
+
+        # apply to same field size
+        f!(U, u)
+
+        # test value
+        @test U[1, 1] ≈ 0.5*(1-im)
+
+        # ensure there is nothing else
+        U[1, 1] = 0
+        @test maximum(abs, U.data) < 1e-14
+    end
+    @testset "dealiased calculations             " begin
+        # define field
+        U = FTField(4)
+        u = Field(even_dealias_size(4))
+        x, y = make_grid(even_dealias_size(4))
+        u.data .= cos.(x .+ y) .+ sin.(x .+ y)
+
+        # define dealiased transform, go to smaller size
+        f! = ForwardFFT!(FTField{4}, u)
+        
+        # apply to same field size
+        f!(U, u)
+
+        # test value
+        @test U[1, 1] ≈ 0.5*(1-im)
+
+        # ensure there is nothing else
+        U[1, 1] = 0
+        @test maximum(abs, U.data) < 1e-14
+    end
 end
