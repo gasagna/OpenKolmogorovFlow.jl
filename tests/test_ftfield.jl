@@ -248,3 +248,11 @@ end
     @test w.data == Complex{Float64}[1+2im  9+0im
                                      3+0im 11+0im]
 end
+
+
+@testset "fieldsize                              " begin
+    for n in 2:2:10
+        @test fieldsize(FTField(n)) == n
+        @test fieldsize(FTField{n}) == n
+    end
+end

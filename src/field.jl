@@ -1,5 +1,5 @@
 # TODO
-export Field
+export Field, fieldsize
 
 struct Field{n, T<:Real, M<:AbstractMatrix{T}} <: AbstractMatrix{T}
     data::M
@@ -20,6 +20,9 @@ function checksize(data::AbstractMatrix{<:Real}, n::Int)
     M == n    || throw(ArgumentError("wrong row number, got $M, should be $n"))
     N == n    || throw(ArgumentError("wrong column number, got $N, should be $n"))
 end
+
+fieldsize(::Type{Field{n}}) where {n} = n
+fieldsize(::Field{n})       where {n} = n
 
 # ~~~ array interface ~~~
 

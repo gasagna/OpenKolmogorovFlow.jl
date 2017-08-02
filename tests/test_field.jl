@@ -38,3 +38,10 @@ end
         @test u[i] == 2i
     end
 end
+
+@testset "fieldsize                              " begin
+    for n in 2:2:10
+        @test fieldsize(Field(n)) == n
+        @test fieldsize(Field{n}) == n
+    end
+end

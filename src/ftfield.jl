@@ -1,7 +1,7 @@
 # TODO
 # ~ check that setindex with k and j does not invalidate the fft
 
-export FTField, growto!, shrinkto!
+export FTField, growto!, shrinkto!, fieldsize
 
 struct FTField{n, T<:Complex, M<:AbstractMatrix{T}} <: AbstractMatrix{T}
     data::M
@@ -10,6 +10,9 @@ struct FTField{n, T<:Complex, M<:AbstractMatrix{T}} <: AbstractMatrix{T}
         new(data)
     end
 end
+
+fieldsize(::Type{FTField{n}}) where {n} = n
+fieldsize(::FTField{n})       where {n} = n
 
 FTField(n::Int) = FTField(n, Complex{Float64})
 FTField(n::Int, ::Type{T}) where T = FTField(zeros(T, n, n>>1+1))
