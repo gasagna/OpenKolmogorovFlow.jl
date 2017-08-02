@@ -34,7 +34,7 @@ ForwardFFT!(::Type{<:FTField{m}}, u::Field{m}, flags::UInt32=FFTW.MEASURE) where
     _ForwardFFT!(u, nothing, flags)
 
 # different size - de-aliased calculations - create temporary
-ForwardFFT!(::Type{<:FTField{m}}, u::Field, flags::UInt32=FFTW.MEASURE) where {m} =
+ForwardFFT!(::Type{<:FTField}, u::Field{m}, flags::UInt32=FFTW.MEASURE) where {m} =
     _ForwardFFT!(u, FTField(m), flags)
 
 # same size - no worries
