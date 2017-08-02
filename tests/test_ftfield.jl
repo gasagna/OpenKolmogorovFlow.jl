@@ -1,7 +1,7 @@
 using OpenKolmogorovFlow
 using Base.Test
 
-@testset "input        " begin
+@testset "input                                  " begin
     @test_throws TypeError     FTField(   rand(5, 5))
     @test_throws ArgumentError FTField(5)
     @test_throws ArgumentError FTField(im*rand(5, 5))
@@ -10,7 +10,7 @@ using Base.Test
     @test_throws ArgumentError FTField(im*rand(4, 2))
 end
 
-@testset "symmetries   " begin
+@testset "symmetries                             " begin
     for n = [2, 24]
         d = n>>1
         U = FTField(rfft(randn(n, n), [2, 1]))
@@ -20,7 +20,7 @@ end
     end
 end
 
-@testset "cartesian    " begin
+@testset "cartesian                              " begin
     # construct data with appropriate symmetries
     data = [1+2im  9+10im 17+0im
             3+4im 11+12im 19+20im
@@ -67,7 +67,7 @@ end
     end
 end
 
-@testset "symmetry     " begin
+@testset "symmetry                               " begin
     for n = [2, 24]
         d = n>>1
         U = FTField(rfft(randn(n, n), [2, 1]))
@@ -77,7 +77,7 @@ end
     end
 end
 
-@testset "linear       " begin
+@testset "linear                                 " begin
     data = rfft(randn(6, 6), [2, 1])
     u = FTField(data)
     for i in 1:length(data)
@@ -85,7 +85,7 @@ end
     end
 end
 
-@testset "similar      " begin
+@testset "similar                                " begin
     for n = [2, 4, 8]
         for T in [Float64, Float32]
             U = FTField(n, Complex{T})
@@ -95,108 +95,187 @@ end
     end
 end
 
-@testset "transform    " begin
-    N = 4
-    x = linspace(0, 2π, N+1)[1:end-1]'
-    y = linspace(0, 2π, N+1)[1:end-1]
-
-    # ~~~ Along j ~~~
-    # for j < N/2 we count the value twice
-    c = randn() + im*randn()
-    û = FT(Field(fun(x, y, c, 1, 0)))
-    @test û[0,  1] ≈      c/2
-    @test û[0, -1] ≈ conj(c/2)
-
-    # for j = N/2 we count the value in full
-    c = randn() + im*randn()
-    û = FT(Field(fun(x, y, c, 2, 0)))
-    @test û[0,  2] ≈ real(c)
-    @test û[0, -2] ≈ real(c)
-
-    # for j = -N/2 the result should be equal to that of j = +N/2
-    c = randn() + im*randn()
-    ûp = FT(Field(round.(fun(x, y, c, -2, 0), 3)))
-    ûm = FT(Field(round.(fun(x, y, c, +2, 0), 3)))
-    @test ûp == ûm
+# this is meant to be a documentation of the properties of the FFT 
+# for a transform of 2D data over a grid with even number of points.
+@testset "transform                              " begin
+    n = 4
+    x, y = make_grid(n)
 
     # ~~~ Along k ~~~
-    # for k < N/2 we count the value twice
-    c = randn() + im*randn()
-    û = FT(Field(fun(x, y, c, 0, 1)))
-    @test û[ 1, 0] ≈      c/2
-    @test û[-1, 0] ≈ conj(c/2)
+    # for k < N/2 the transform has half the value
+    f = cos.(0.*x .+ y) .+ 2.*sin.(0.*x .+ y)
+    U = FFT(Field(f))
+    @test U[ 1, 0] ≈ 0.5*(1 - 2*im)
+    @test U[-1, 0] ≈ 0.5*(1 + 2*im)
 
-    # for k = N/2 we count the value in full
-    c = randn() + im*randn()
-    û = FT(Field(fun(x, y, c, 0, 2)))
-    @test û[ 2, 0] ≈ real(c)
-    @test û[-2, 0] ≈ real(c)
+    # for k = N/2 we count the value in full. The coefficient
+    # must be real, hence the sine part gets killed.
+    f = cos.(0.*x .+ 2.*y) .+ 2.*sin.(0.*x .+ 2.*y)
+    U = FFT(Field(f))
+    @test U[ 2, 0] ≈ 1
+    @test U[-2, 0] ≈ 1
+
+    # for k = 0 we count the value in full. The coefficient
+    # must be real
+    f = 2.0.*cos.(0.*x .+ 0.*y)
+    U = FFT(Field(f))
+    @test U[ 0, 0] ≈ 2.0
+
+    # for k = -N/2 the result should be equal to that of k = +N/2
+    fp = cos.(0.*x .+ 2.*y); Up = FFT(Field(f))
+    fm = cos.(0.*x .- 2.*y); Um = FFT(Field(f))
+    @test Up == Um
+
+    # ~~~ Along j ~~~
+    # for j < N/2 the transform has half the value
+    f = cos.(1.*x .+ 0.*y) .+ 2.*sin.(1.*x .+ 0.*y)
+    U = FFT(Field(f))
+    @test U[0,  1] ≈ 0.5*(1 - 2*im)
+    @test U[0, -1] ≈ 0.5*(1 + 2*im)
+
+    # for j = N/2 we count the value in full. The coefficient
+    # must be real, hence the sine part gets killed.
+    f = cos.(2.*x .+ 0.*y) .+ 2.*sin.(2.*x .+ 0.*y)
+    U = FFT(Field(f))
+    @test U[0,  2] ≈ 1
+    @test U[0, -2] ≈ 1
 
     # for j = -N/2 the result should be equal to that of j = +N/2
-    c = randn() + im*randn()
-    ûp = FT(Field(round.(fun(x, y, c, 0, -2), 3)))
-    ûm = FT(Field(round.(fun(x, y, c, 0, +2), 3)))
-    @test ûp == ûm
+    fp = cos.(+ 2.*x .+ 0.*y); Up = FFT(Field(f))
+    fm = cos.(- 2.*x .+ 0.*y); Um = FFT(Field(f))
+    @test Up == Um
 
     # ~~~ Along both j and k ~~~
-    c = randn() + im*randn()
-    û = FT(Field(fun(x, y, c, 2, 2)))
-    @test û[ 2,  2] ≈ real(c)
-    @test û[-2, -2] ≈ real(c)
+    f = cos.(1.*x .+ 1.*y) .+ 2.*sin.(1.*x .+ 1.*y)
+    U = FFT(Field(f))
+    @test U[ 1,  1] ≈ 0.5*(1 - 2im)
+    @test U[-1, -1] ≈ 0.5*(1 + 2im)
 
-    c = randn() + im*randn()
-    û = FT(Field(fun(x, y, c, 1, 2)))
-    @test û[ 2,  1] ≈      c/2
-    @test û[-2, -1] ≈ conj(c/2)
+    f = cos.(1.*x .+ 2.*y) .+ 3.*sin.(1.*x .+ 2.*y)
+    U = FFT(Field(f))
+    @test U[ 2,  1] ≈ 0.5*(1 - 3im)
+    @test U[-2, -1] ≈ 0.5*(1 + 3im)
 
-    c = randn() + im*randn()
-    û = FT(Field(fun(x, y, c, 2, 1)))
-    @test û[ 1,  2] ≈      c/2
-    @test û[-1, -2] ≈ conj(c/2)
+    f = cos.(2.*x .+ 1.*y) .+ 4.*sin.(2.*x .+ 1.*y)
+    U = FFT(Field(f))
+    @test U[ 1,  2] ≈ 0.5*(1 - 4im)
+    @test U[-1, -2] ≈ 0.5*(1 + 4im)
 
-    c = randn() + im*randn()
-    û = FT(Field(fun(x, y, c, -1, 2)))
-    @test û[ 2, -1] ≈      c/2
-    @test û[-2,  1] ≈ conj(c/2)
+    f = 2.*cos.(2.*x .- 1.*y) .+ 1.*sin.(2.*x .- 1.*y)
+    U = FFT(Field(f))
+    @test U[-1,  2] ≈ 0.5*(2 - 1im)
+    @test U[ 1, -2] ≈ 0.5*(2 + 1im)
+
+    # the corner wave number is real
+    f = cos.(2.*x .+ 2.*y) .+ 4.*sin.(2.*x .+ 2.*y)
+    U = FFT(Field(f))
+    @test U[ 2,  2] ≈ 1
+    @test U[-2, -2] ≈ 1
 end
 
-@testset "grow/shrink-to!" begin
-    data = Complex{Float64}[1+2im  9+10im 17+0im
-                            3+4im 11+12im 19+20im
-                            5+0im 13+14im 21+0im
-                            3-4im 15+16im 19-20im]
-    u = FTField(data)
+@testset "grow/shrink-to!                        " begin
+    @testset "growto!                            " begin
+        data = Complex{Float64}[1+0im  9+10im 16+0im
+                                3+4im 11+12im 19+20im
+                                6+0im 13+14im 22+0im
+                                3-4im 15+16im 19-20im]
+        u = FTField(data)
 
-    # smaller size
-    v = FTField(2)
-    @test_throws ArgumentError growto!(v, u)
-    
-    # same size
-    v = FTField(4)
-    growto!(v, u)
-    @test v == u
+        # smaller size
+        v = FTField(2)
+        @test_throws ArgumentError growto!(v, u)
+        
+        # same size
+        v = FTField(4)
+        growto!(v, u)
+        @test v == u
 
-    # larger size
-    v = FTField(6)
-    growto!(v, u)
-    @test v.data == Complex{Float64}[1+2im  9+10im 17+0im   0+0im
-                                     3+4im 11+12im 19+20im  0+0im
-                                     5+0im 13+14im 21+0im   0+0im
-                                     0+0im  0+0im   0+0im   0+0im
-                                     5+0im 13+14im 21+0im   0+0im
-                                     3-4im 15+16im 19-20im  0+0im]
-    
-    # shrink                                     
-    w = FTField(4)
-    shrinkto!(w, v)
-    @test w.data == Complex{Float64}[1+2im  9+10im 17+0im 
-                                     3+4im 11+12im 19+20im
-                                     5+0im 13+14im 21+0im 
-                                     3-4im 15+16im 19-20im]                                     
+        # larger size
+        v = FTField(6)
+        growto!(v, u)
 
-    # enforce symmetries                                     
-    w = FTField(2)
-    shrinkto!(w, v)
-    @test w.data == Complex{Float64}[1+2im  9+0im
-                                     3+0im 11+0im]
+        # note how the frequencies (2, 0), (0, 2) and (2, 2) are halved
+        @test v.data == Complex{Float64}[  1+0im  9+10im  8+0im    0+0im
+                                           3+4im 11+12im  19+20im  0+0im
+                                           3+0im 13+14im  11+0im   0+0im
+                                           0+0im  0+0im    0+0im   0+0im
+                                           3+0im  0+0im    0+0im   0+0im
+                                           3-4im  0+0im    0+0im   0+0im]
+
+        # define a field that can be contained on a 4×4 grid, or more.
+        # Note that some terms are zero, because some of the DFT 
+        # coefficients of real data are purely real, e.g. the (0, 0)
+        # frequency.
+        function fun(n) 
+            x, y = make_grid(n)
+            u   = 1.*cos.(0.*y .+ 0.*x) 
+            u .+= 3.*cos.(0.*y .+ 1.*x) .+ 4.*sin.( 0.*y .+ 1.*x)
+            u .+= 5.*cos.(0.*y .+ 2.*x) 
+            u .+= 2.*cos.(1.*y .+ 0.*x) .+ 1.*sin.( 1.*y .+ 0.*x)
+            u .+= 5.*cos.(1.*y .+ 1.*x) .+ 2.*sin.( 1.*y .+ 1.*x)
+            u .+= 9.*cos.(1.*y .+ 2.*x) .+ 3.*sin.( 1.*y .+ 2.*x)
+            u .+= 7.*cos.(2.*y .+ 0.*x) 
+            u .+= 1.*cos.(2.*y .+ 1.*x) .+ 3.*sin.( 2.*y .+ 1.*x)
+            u .+= 4.*cos.(2.*y .+ 2.*x) 
+            x, y, u
+        end                   
+        # define field on 4x4, then go to Fourier space  
+        x, y, u_small = fun(4)           
+        U_small = FFT(Field(u_small))     
+
+        # define same field on larger grid, then go to Fourier space
+        for n = [6, 8, 10]
+            x, y, u_large = fun(n)
+            U_large = FFT(Field(u_large))
+
+            # grow the 4x4 DFT to a nxn DFT
+            U_large_g = growto!(FTField(n), U_small)
+            u_large_g = IFFT(U_large_g)
+
+            # these should be equal
+            @test u_large ≈ u_large_g.data
+        end
+    end
+    @testset "shrinkto!                          " begin
+        data = Complex{Float64}[1+0im 5-7im 5+4im 16+0im
+                                3+4im 3+3im 4-7im 19+20im
+                                4-1im 7+3im 4+8im 22+2im
+                                6+0im 5+8im 6-3im 12+0im
+                                4+1im 1+3im 2+4im 22+1im
+                                3-4im 5-3im 4-1im 19-20im]       
+
+        # define field                                
+        v = FTField(data)                                
+
+        # same size                                 
+        w = FTField(6)
+        shrinkto!(w, v)
+        @test w.data == Complex{Float64}[1+0im 5-7im 5+4im 16+0im
+                                         3+4im 3+3im 4-7im 19+20im
+                                         4-1im 7+3im 4+8im 22+2im
+                                         6+0im 5+8im 6-3im 12+0im
+                                         4+1im 1+3im 2+4im 22+1im
+                                         3-4im 5-3im 4-1im 19-20im]                                  
+
+        # smaller                                         
+        w = FTField(4)
+        shrinkto!(w, v)
+        @test w.data == Complex{Float64}[1+0im 5-7im 10+0im
+                                         3+4im 3+3im  4-7im 
+                                         8-0im 7+3im  8+0im 
+                                         3-4im 5-3im  4-1im]
+
+        # smaller                         
+        w = FTField(2)
+        shrinkto!(w, v)
+        @test w.data == Complex{Float64}[1+0im 10+0im
+                                         6+0im  6+0im]
+    end
+end
+
+@testset "fieldsize                              " begin
+    for n in 2:2:10
+        @test fieldsize(FTField(n)) == n
+        @test fieldsize(FTField{n}) == n
+    end
 end

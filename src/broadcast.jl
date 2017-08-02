@@ -19,6 +19,7 @@ promote_containertype(::Type{Array}, ::Type{FTField}) = FTField
     quote
         $(Expr(:meta, :inline))
         broadcast!(f, unsafe_get(dest), map(unsafe_get, args)...)
+        return dest
     end
 end
 

@@ -6,6 +6,9 @@ using OpenKolmogorovFlow
         u = FTField(randn(n, n>>1+1) + im*randn(n, n>>1+1))
         v = FTField(randn(n, n>>1+1) + im*randn(n, n>>1+1))
 
+        # return v and not the underlying array
+        @test typeof(v .*= 1) <: FTField
+
         # use FTFields and scalar
         v .= u .+ conj.(u)
         for i in linearindices(v)
