@@ -25,7 +25,9 @@ ImcA!(V::ImplicitTerm{n}, c::Real, y::FTField{n}, z::FTField{n}) where {n} =
     (z .= y ./ (1 .- c .* (V.dx² .+ V.dy²) .* V.ν))
 
 # ~~~ THE NONLINEAR TERM OF THE GOVERNING EQUATIONS PLUS THE FORCING ~~~
-struct ExplicitTerm{n, T}
+struct ExplicitTerm{n, m, T<:AbstractFloat, IT<:InverseFFT!, FT<:ForwardFFT!}
+       ifft!::IT
+        ftt!::FT
     kforcing::Int
            U::FTField{n, Complex{T}, Matrix{Complex{T}}}
            V::FTField{n, Complex{T}, Matrix{Complex{T}}}
@@ -35,32 +37,38 @@ struct ExplicitTerm{n, T}
           dy::DiffOperator{n, Complex{Int}}
          dx²::DiffOperator{n, Int}
          dy²::DiffOperator{n, Int}
-           u::Field{n, T, Matrix{T}}
-           v::Field{n, T, Matrix{T}}
-        ∂ω∂x::Field{n, T, Matrix{T}}
-        ∂ω∂y::Field{n, T, Matrix{T}}
-      InvFFT!
-     ForwFFT!
-    function ExplicitTerm{n, T}(kforcing::Int, flags::UInt32, dealias::Bool=true) where {n, T}
+           u::Field{m, T, Matrix{T}}
+           v::Field{m, T, Matrix{T}}
+        ∂ω∂x::Field{m, T, Matrix{T}}
+        ∂ω∂y::Field{m, T, Matrix{T}}
+    function ExplicitTerm{n, m, T}(kforcing::Int, flags::UInt32) where {n, m, T}
         iseven(n) || throw(ArgumentError("`n` must be even, got $n"))
-        a, b = FTField(n, Complex{T}), FTField(n, Complex{T})
-        c, d = FTField(n, Complex{T}), FTField(n, Complex{T})
-        f, g, h, i = Field(n, T), Field(n, T), Field(n, T), Field(n, T)
-        InvFFT!, ForwFFT! = InverseFFT(a, flags), ForwardFFT(f, flags)
-        new{n, T}(kforcing, a, b, c, d, DiffOperator(n, :x), DiffOperator(n, :y), 
-                  DiffOperator(n, :xx), DiffOperator(n, :yy), f, g, h, i, 
-                  InvFFT!, ForwFFT!)
+        iseven(m) || throw(ArgumentError("`m` must be even, got $m"))
+        m ≥ n     || throw(ArgumentError("`m` must be bigger than `n`, got `n, m= $n, $m`. Are you sure?"))
+        
+        # complex fields have size n
+        a, b, c, d = FTField.((n, n, n, n), Complex{T})
+
+        # real fields (might) have (larger) size m
+        f, g, h, i = Field.((m, m, m, m), T)
+        
+        # transforms
+        ifft! = InverseFFT!(  Field{m}, a,  flags)
+         fft! = ForwardFFT!(FTField{n}, f,  flags)
+
+        new{n, m, T, typeof(ifft!), typeof(fft!)}(ifft!, fft!, kforcing, 
+            a, b, c, d, 
+            DiffOperator(n, :x),  DiffOperator(n, :y), 
+            DiffOperator(n, :xx), DiffOperator(n, :yy), 
+            f, g, h, i)
     end
 end
 
-ExplicitTerm(n::Int, 
-             kforcing::Int=4, 
-             ::Type{T}=Float64, 
-             flags::UInt32=FFTW.MEASURE, 
-             dealias::Bool=true) where {T} = 
-    ExplicitTerm{n, T}(kforcing, flags, dealias)
+# Outer constructor
+ExplicitTerm(n::Int, m::Int, kforcing::Int, ::Type{T}, flags::UInt32) where {T} =
+     ExplicitTerm{n, m, T}(kforcing, flags)
 
-function (Eq::ExplicitTerm{n})(t::Real, Ω::FTField{n}, ∂Ω∂t::FTField{n}) where {n}
+function (Eq::ExplicitTerm{n})(t::Real, Ω::FTField{n}, Ω̇::FTField{n}, add::Bool=false) where {n}
     # ~~~ PRELIMINARIES ~~~
     # set mean to zero
     Ω[0, 0] = 0.0
@@ -75,51 +83,54 @@ function (Eq::ExplicitTerm{n})(t::Real, Ω::FTField{n}, ∂Ω∂t::FTField{n}) w
 
     # ~~~ NONLINEAR TERM ~~
     # inverse transform to physical space into temporaries
-    Eq.InvFFT!(Eq.u,    Eq.U)
-    Eq.InvFFT!(Eq.v,    Eq.V)
-    Eq.InvFFT!(Eq.∂ω∂x, Eq.∂Ω∂x)
-    Eq.InvFFT!(Eq.∂ω∂y, Eq.∂Ω∂y)
+    Eq.ifft!(Eq.u,    Eq.U)
+    Eq.ifft!(Eq.v,    Eq.V)
+    Eq.ifft!(Eq.∂ω∂x, Eq.∂Ω∂x)
+    Eq.ifft!(Eq.∂ω∂y, Eq.∂Ω∂y)
 
     # multiply in physical space. Overwrite u
     Eq.u .= .- Eq.u.*Eq.∂ω∂x .- Eq.v.*Eq.∂ω∂y
 
     # forward transform to Fourier space into destination
-    Eq.ForwFFT!(Eq.u, ∂Ω∂t)
+    ifelse(add, 
+          (Eq.  ftt!(Eq.U, Eq.u); Ω̇ .+= Eq.U;), 
+           Eq.  ftt!(Ω̇,    Eq.u))        
 
     # ~~~ FORCING TERM ~~~
-    ∂Ω∂t[ Eq.kforcing, 0] -= Eq.kforcing/2
-    ∂Ω∂t[-Eq.kforcing, 0] -= Eq.kforcing/2
+    Ω̇[ Eq.kforcing, 0] -= Eq.kforcing/2
+    Ω̇[-Eq.kforcing, 0] -= Eq.kforcing/2
     return nothing
 end
 
 
 # ~~~ THE GOVERNING EQUATIONS ~~~
-struct VorticityEquation{n, T}
+struct VorticityEquation{n, m, T<:AbstractFloat}
     imTerm::ImplicitTerm{n}
-    exTerm::ExplicitTerm{n, T}
-    function VorticityEquation{n, T}(Re::Real,
-                                     kforcing::Int=4, 
-                                     ::Type{T}=Float64,
-                                     flags::UInt32=FFTW.MEASURE,
-                                     dealias::Bool=true) where {n, T}
+    exTerm::ExplicitTerm{n, m, T}
+    function VorticityEquation{n, m, T}(Re::Real,
+                                        kforcing::Int, 
+                                        flags::UInt32) where {n, m, T}
         iseven(n) || throw(ArgumentError("`n` must be even, got $n"))
-        new(ImplicitTerm(n, Re), ExplicitTerm(n, kforcing, T, flags, dealias))
+        iseven(m) || throw(ArgumentError("`m` must be even, got $m"))
+        new(ImplicitTerm(n, Re), ExplicitTerm(n, m, kforcing, T, flags))
     end
 end
 
 # outer constructor
-VorticityEquation(n::Int, 
-                  Re::Real, 
-                  kforcing::Int=4, 
-                  ::Type{T}=Float64,
-                  flags::UInt32=FFTW.MEASURE, 
-                  dealias::Bool=true) where {T} = 
-    VorticityEquation{n, T}(Re, kforcing, T, flags, dealias)
+function VorticityEquation(n::Int, 
+                           Re::Real, 
+                           kforcing::Int=4; 
+                           T::Type=Float64,
+                           flags::UInt32=FFTW.MEASURE, 
+                           dealias::Bool=true)
+    m = dealias == true ? even_dealias_size(n) : n
+    VorticityEquation{n, m, T}(Re, kforcing, flags)
+end
 
 # evaluate right hand side of governing equations
 function (eq::VorticityEquation{n, T})(t::Real, Ω::FTField{n}, Ω̇::FTField{n}) where {n, T}
     A_mul_B!(Ω̇, eq.imTerm, Ω)
-    eq.exTerm(t, Ω, Ω̇, :yes)
+    eq.exTerm(t, Ω, Ω̇, true)
 end
 
 # obtain two components

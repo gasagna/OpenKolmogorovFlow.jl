@@ -1,5 +1,6 @@
 using OpenKolmogorovFlow
 using IMEXRKCB
+using Base.Test
 
 # Test that solution converges to the 
 # laminar flow for small Reynolds numbers
@@ -14,28 +15,30 @@ using IMEXRKCB
     # initial condition
     Ω₀ = FTField(n)
     
-    # get explicit and implicit parts
-    L, N = imex(VorticityEquation(n, Re, kforcing))
+    for dealias in [true, false]
+        # get explicit and implicit parts
+        L, N = imex(VorticityEquation(n, Re, kforcing; dealias=dealias))
 
-    # for each integration scheme
-    for impl in [IMEXRK3R2R(IMEXRKCB3c, false),
-                 IMEXRK3R2R(IMEXRKCB3e, false),
-                 IMEXRK4R3R(IMEXRKCB4,  false)]
-    
-        # define T-time forward map
-        f = integrator(N, L, IMEXRKScheme(impl, Ω₀), 0.005)
-
-        # start from some non zero initial condition
-        Ω₀ .= 0.01; Ω₀[0, 0] = 0
-
-        # monitor the state excited by forcing
-        m = Monitor((Ω->Ω, ), Ω₀)
-    
-        # map forward 
-        f(Ω₀, 50,  m)
+        # for each integration scheme
+        for impl in [IMEXRK3R2R(IMEXRKCB3c, false),
+                     IMEXRK3R2R(IMEXRKCB3e, false),
+                     IMEXRK4R3R(IMEXRKCB4,  false)]
         
-        # test final value is that predicted by explicit equation
-        Δ = m.samples[1][end] .- laminarflow(n, Re, kforcing)
-        @test maximum(abs, Δ) < 1e-15
+            # define T-time forward map
+            f = integrator(N, L, IMEXRKScheme(impl, Ω₀), 0.005)
+
+            # start from some non zero initial condition
+            Ω₀ .= 0.01; Ω₀[0, 0] = 0
+
+            # monitor the state excited by forcing
+            m = Monitor((Ω->Ω, ), Ω₀)
+        
+            # map forward 
+            f(Ω₀, 50,  m)
+            
+            # test final value is that predicted by explicit equation
+            Δ = m.samples[1][end] .- laminarflow(n, Re, kforcing)
+            @test maximum(abs, Δ) < 1e-15
+        end
     end
 end
