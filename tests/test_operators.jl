@@ -49,13 +49,18 @@ end
     
     # select α, β up to n/2-1, to avoid aliasing
     l = n>>1-1
-    for α in rand(-l:l, 20), β in rand(-l:l, 20)
+
+    # make grid
+    x, y = make_grid(n)
+    
+    for α in rand(-l:l, 10), β in rand(-l:l, 10)
         # construct a random field
-        c = rand() + im*rand()
-        u = Field(fun(x, y, c, α, β))
+        cc, cs = randn(), randn()
+
+        u = Field(cc.*cos.(α.*x .+ β.*y) .+ cs.*sin.(α.*x .+ β.*y))
 
         # transform to Fourier space
-        U = FT(u)
+        U = FFT(u)
 
         # calculate derivatives. This also tests broadcast for 
         # operators
@@ -65,9 +70,9 @@ end
         Uyy = DiffOperator(n, :yy) .* U
 
         # check against analytic value
-        @test IFT(Ux).data  ≈  funx(x, y, c, α, β)
-        @test IFT(Uy).data  ≈  funy(x, y, c, α, β)
-        @test IFT(Uxx).data ≈ funxx(x, y, c, α, β)
-        @test IFT(Uyy).data ≈ funyy(x, y, c, α, β)
+        @test IFFT(Ux).data  ≈    -α.*cc.*sin.(α.*x .+ β.*y) .+ α.*cs.*cos.(α.*x .+ β.*y)
+        @test IFFT(Uy).data  ≈    -β.*cc.*sin.(α.*x .+ β.*y) .+ β.*cs.*cos.(α.*x .+ β.*y)
+        @test IFFT(Uxx).data ≈  -α^2.*cc.*cos.(α.*x .+ β.*y) .- α^2.*cs.*sin.(α.*x .+ β.*y)
+        @test IFFT(Uyy).data ≈  -β^2.*cc.*cos.(α.*x .+ β.*y) .- β^2.*cs.*sin.(α.*x .+ β.*y)
     end
 end
