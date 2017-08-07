@@ -93,8 +93,8 @@ function (Eq::ExplicitTerm{n})(t::Real, Ω::FTField{n}, Ω̇::FTField{n}, add::B
 
     # forward transform to Fourier space into destination
     ifelse(add, 
-          (Eq.  ftt!(Eq.U, Eq.u); Ω̇ .+= Eq.U;), 
-           Eq.  ftt!(Ω̇,    Eq.u))        
+          (Eq.ftt!(Eq.U, Eq.u); Ω̇ .+= Eq.U;), 
+           Eq.ftt!(Ω̇,    Eq.u))        
 
     # ~~~ FORCING TERM ~~~
     Ω̇[ Eq.kforcing, 0] -= Eq.kforcing/2
