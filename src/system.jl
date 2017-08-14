@@ -14,8 +14,7 @@ struct ImplicitTerm{n, T}
 end
 
 # Outer constructor
-ImplicitTerm(n::Int, Re::Real, ::Type{T}=Float64) where {T} = 
-    ImplicitTerm{n, T}(Re)
+ImplicitTerm(n::Int, Re::Real, ::Type{T}) where {T} = ImplicitTerm{n, T}(Re)
 
 # Methods to satisfy the IMEXRKCB interface
 Base.A_mul_B!(out::FTField{n}, V::ImplicitTerm{n}, U::FTField{n}) where {n} =
@@ -103,14 +102,14 @@ end
 
 # ~~~ THE GOVERNING EQUATIONS ~~~
 struct VorticityEquation{n, m, T<:AbstractFloat}
-    imTerm::ImplicitTerm{n}
+    imTerm::ImplicitTerm{n, T}
     exTerm::ExplicitTerm{n, m, T}
     function VorticityEquation{n, m, T}(Re::Real,
                                         kforcing::Int, 
                                         flags::UInt32) where {n, m, T}
         iseven(n) || throw(ArgumentError("`n` must be even, got $n"))
         iseven(m) || throw(ArgumentError("`m` must be even, got $m"))
-        new(ImplicitTerm(n, Re), ExplicitTerm(n, m, kforcing, T, flags))
+        new(ImplicitTerm(n, Re, T), ExplicitTerm(n, m, kforcing, T, flags))
     end
 end
 
