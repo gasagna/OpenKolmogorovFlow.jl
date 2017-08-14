@@ -4,25 +4,24 @@ import IMEXRKCB: ImcA!
 export ImplicitTerm, ExplicitTerm, VorticityEquation, imex
 
 # ~~~ THE VISCOUS TERM OF THE GOVERNING EQUATIONS ~~~
-struct ImplicitTerm{n}
-    dx²::DiffOperator{n, Int}
-    dy²::DiffOperator{n, Int}
+struct ImplicitTerm{n, T}
+    dx²dy²::DiffOperator{n, T}
     ν::Float64                 # inverse of Reynolds number
-    function ImplicitTerm{n}(Re::Real) where {n}
+    function ImplicitTerm{n, T}(Re::Real) where {n, T}
         iseven(n) || throw(ArgumentError("`n` must be even, got $n"))
-        new(DiffOperator(n, :xx), DiffOperator(n, :yy), 1/Re)
+        new(DiffOperator(n, :xxyy), 1/Re)
     end
 end
 
 # Outer constructor
-ImplicitTerm(n::Int, Re::Real) = ImplicitTerm{n}(Re)
+ImplicitTerm(n::Int, Re::Real, ::Type{T}) where {T} = ImplicitTerm{n, T}(Re)
 
 # Methods to satisfy the IMEXRKCB interface
 Base.A_mul_B!(out::FTField{n}, V::ImplicitTerm{n}, U::FTField{n}) where {n} =
-    (out .= (V.dx² .+ V.dy²) .* U .* V.ν)
+    (ν = V.ν; out .= V.dx²dy² .* U .* ν)
 
 ImcA!(V::ImplicitTerm{n}, c::Real, y::FTField{n}, z::FTField{n}) where {n} =
-    (z .= y ./ (1 .- c .* (V.dx² .+ V.dy²) .* V.ν))
+    (z .= y ./ (1 .- c .* V.dx²dy² .* V.ν))
 
 # ~~~ THE NONLINEAR TERM OF THE GOVERNING EQUATIONS PLUS THE FORCING ~~~
 struct ExplicitTerm{n, m, T<:AbstractFloat, IT<:InverseFFT!, FT<:ForwardFFT!}
@@ -33,10 +32,9 @@ struct ExplicitTerm{n, m, T<:AbstractFloat, IT<:InverseFFT!, FT<:ForwardFFT!}
            V::FTField{n, Complex{T}, Matrix{Complex{T}}}
         ∂Ω∂x::FTField{n, Complex{T}, Matrix{Complex{T}}}
         ∂Ω∂y::FTField{n, Complex{T}, Matrix{Complex{T}}}
-          dx::DiffOperator{n, Complex{Int}}
-          dy::DiffOperator{n, Complex{Int}}
-         dx²::DiffOperator{n, Int}
-         dy²::DiffOperator{n, Int}
+          dx::DiffOperator{n, Complex{T}}
+          dy::DiffOperator{n, Complex{T}}
+      dx²dy²::DiffOperator{n, T}
            u::Field{m, T, Matrix{T}}
            v::Field{m, T, Matrix{T}}
         ∂ω∂x::Field{m, T, Matrix{T}}
@@ -58,8 +56,7 @@ struct ExplicitTerm{n, m, T<:AbstractFloat, IT<:InverseFFT!, FT<:ForwardFFT!}
 
         new{n, m, T, typeof(ifft!), typeof(fft!)}(ifft!, fft!, kforcing, 
             a, b, c, d, 
-            DiffOperator(n, :x),  DiffOperator(n, :y), 
-            DiffOperator(n, :xx), DiffOperator(n, :yy), 
+            DiffOperator(n, :x),  DiffOperator(n, :y), DiffOperator(n, :xxyy),
             f, g, h, i)
     end
 end
@@ -78,8 +75,8 @@ function (Eq::ExplicitTerm{n})(t::Real, Ω::FTField{n}, Ω̇::FTField{n}, add::B
     Eq.∂Ω∂y .= Eq.dy .* Ω
 
     # obtain velocity components. Set mean to zero.
-    Eq.U .= .- (Eq.dx² .+ Eq.dy²) .\ Eq.∂Ω∂y; Eq.U[0, 0] = 0
-    Eq.V .=    (Eq.dx² .+ Eq.dy²) .\ Eq.∂Ω∂x; Eq.V[0, 0] = 0
+    Eq.U .= .- (Eq.dx²dy²) .\ Eq.∂Ω∂y; Eq.U[0, 0] = 0
+    Eq.V .=    (Eq.dx²dy²) .\ Eq.∂Ω∂x; Eq.V[0, 0] = 0
 
     # ~~~ NONLINEAR TERM ~~
     # inverse transform to physical space into temporaries
@@ -105,14 +102,14 @@ end
 
 # ~~~ THE GOVERNING EQUATIONS ~~~
 struct VorticityEquation{n, m, T<:AbstractFloat}
-    imTerm::ImplicitTerm{n}
+    imTerm::ImplicitTerm{n, T}
     exTerm::ExplicitTerm{n, m, T}
     function VorticityEquation{n, m, T}(Re::Real,
                                         kforcing::Int, 
                                         flags::UInt32) where {n, m, T}
         iseven(n) || throw(ArgumentError("`n` must be even, got $n"))
         iseven(m) || throw(ArgumentError("`m` must be even, got $m"))
-        new(ImplicitTerm(n, Re), ExplicitTerm(n, m, kforcing, T, flags))
+        new(ImplicitTerm(n, Re, T), ExplicitTerm(n, m, kforcing, T, flags))
     end
 end
 
