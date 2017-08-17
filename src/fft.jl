@@ -39,7 +39,7 @@ ForwardFFT!(::Type{<:FTField}, u::Field{m}, flags::UInt32=FFTW.MEASURE) where {m
 
 # same size - no worries
 (f::ForwardFFT!{m})(U::FTField{m}, u::Field{m}) where {m} = 
-    (A_mul_B!(U.data, f.plan, u.data); U .*= 1/m^2; U)
+    (Base.FFTW.unsafe_execute!(f.plan, u.data, U.data); U .*= 1/m^2; U)
 
 # different size - use temporary and shrink
 (f::ForwardFFT!{m})(U::FTField, u::Field{m}) where {m} = 
@@ -73,7 +73,7 @@ InverseFFT!(::Type{<:Field{m}}, U::FTField{m}, flags::UInt32=FFTW.MEASURE) where
 
 # same size - no worries
 @inline (i::InverseFFT!{m})(u::Field{m}, U::FTField{m}) where {m} =
-    (A_mul_B!(u.data, i.plan, U.data); u)
+    (Base.FFTW.unsafe_execute!(i.plan, U.data, u.data); u)
 
 # different size - grow `n` up to `m` then transform. Up to user
 # to make sure that `U` has size that makes sense for dealiasing.
