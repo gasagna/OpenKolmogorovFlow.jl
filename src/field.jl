@@ -3,7 +3,7 @@ export Field, fieldsize, make_grid
 struct Field{n, T<:Real, M<:AbstractMatrix{T}} <: AbstractMatrix{T}
     data::M
     function Field{n, T, M}(data::M) where {n, T, M}
-        checksize(data, n)
+        Field_checksize(data, n)
         new{n, T, M}(data)
     end
 end
@@ -12,7 +12,7 @@ Field(data::AbstractMatrix) =
     Field{size(data, 1), eltype(data), typeof(data)}(data)
 Field(n::Int, ::Type{T}=Float64) where {T} = Field(zeros(T, n, n))
 
-function checksize(data::AbstractMatrix{<:Real}, n::Int)
+function Field_checksize(data::AbstractMatrix, n::Int)
     M, N = size(data)
     N == M    || throw(ArgumentError("input matrix must be square: got $M×$N"))
     iseven(n) || throw(ArgumentError("`n` must be even, got $n"))

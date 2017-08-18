@@ -6,7 +6,7 @@ export FTField, growto!, shrinkto!, fieldsize
 struct FTField{n, T<:Complex, M<:AbstractMatrix{T}} <: AbstractMatrix{T}
     data::M
     function FTField{n, T, M}(data::M) where {n, T, M}
-        checksize(data, n)
+        FTField_checksize(data, n)
         new(data)
     end
 end
@@ -15,10 +15,10 @@ fieldsize(::Type{FTField{n}}) where {n} = n
 fieldsize(::FTField{n})       where {n} = n
 
 FTField(n::Int) = FTField(n, Complex{Float64})
-FTField(n::Int, ::Type{T}) where T = FTField(zeros(T, n, n>>1+1))
+FTField(n::Int, ::Type{T}) where {T} = FTField(zeros(T, n, n>>1+1))
 FTField(data::AbstractMatrix) = FTField{size(data, 1), eltype(data), typeof(data)}(data)
 
-function checksize(data::AbstractMatrix, n::Int)
+function FTField_checksize(data::AbstractMatrix, n::Int)
     M, N = size(data)
     iseven(n)   || throw(ArgumentError("`n` must be even, got $n"))
     M == n      || throw(ArgumentError("wrong row number, got $M"))
