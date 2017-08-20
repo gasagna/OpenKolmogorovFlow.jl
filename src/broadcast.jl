@@ -7,6 +7,9 @@ import Base.Broadcast: _containertype,
 # when you are broadcasting over FTField and DiffOperator always go down to FTField
 _containertype(::Type{<:DiffOperator}) = FTField
 
+# extract the underlying matrix representation 
+@inline Base.unsafe_get(U::Union{FTField, Field, DiffOperator}) = U.data
+
 for T in (:FTField, :Field)
     @eval begin
         _containertype(::Type{<:$T}) = $T
@@ -34,8 +37,5 @@ for T in (:FTField, :Field)
                 $($T)(broadcast(f, $(args...)))
             end
         end
-
-        # extract the underlying matrix representation 
-        @inline Base.unsafe_get(U::Union{$T, DiffOperator}) = U.data
     end
 end
