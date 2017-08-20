@@ -1,6 +1,8 @@
 __precompile__(true)
 module OpenKolmogorovFlow
 
+using VariationalNumbers
+
 include("operators.jl")
 include("indexing.jl")
 include("ftfield.jl")
