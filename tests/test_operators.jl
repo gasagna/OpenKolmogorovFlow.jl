@@ -3,6 +3,9 @@ using OpenKolmogorovFlow
 
 @testset "derivatives                            " begin
     
+    # must use a float or an int
+    @test_throws MethodError DiffOperator(4, :x, Complex{Int})
+
     # create data
     data = [1+2im  9+10im 17+0im
             3+4im 11+12im 19+20im
@@ -11,10 +14,10 @@ using OpenKolmogorovFlow
     U = FTField(data)
 
     # do work
-    ∂U∂x   = DiffOperator(4, :x)  .* U
-    ∂U∂y   = DiffOperator(4, :y)  .* U
-    ∂²U∂x² = DiffOperator(4, :xx) .* U
-    ∂²U∂y² = DiffOperator(4, :yy) .* U
+    ∂U∂x   = DiffOperator(4, :x,  Int64) .* U
+    ∂U∂y   = DiffOperator(4, :y,  Int64) .* U
+    ∂²U∂x² = DiffOperator(4, :xx, Int64) .* U
+    ∂²U∂y² = DiffOperator(4, :yy, Int64) .* U
 
     # Note that these field do not represent valid
     # rfft data, because some of the symmetries have
@@ -64,10 +67,10 @@ end
 
         # calculate derivatives. This also tests broadcast for 
         # operators
-        Ux  = DiffOperator(n, :x)  .* U
-        Uy  = DiffOperator(n, :y)  .* U
-        Uxx = DiffOperator(n, :xx) .* U
-        Uyy = DiffOperator(n, :yy) .* U
+        Ux  = DiffOperator(n, :x,  Int64) .* U
+        Uy  = DiffOperator(n, :y,  Int64) .* U
+        Uxx = DiffOperator(n, :xx, Int64) .* U
+        Uyy = DiffOperator(n, :yy, Int64) .* U
 
         # check against analytic value
         @test IFFT(Ux).data  ≈    -α.*cc.*sin.(α.*x .+ β.*y) .+ α.*cs.*cos.(α.*x .+ β.*y)

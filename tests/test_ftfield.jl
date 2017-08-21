@@ -2,7 +2,7 @@ using OpenKolmogorovFlow
 using Base.Test
 
 @testset "input                                  " begin
-    @test_throws TypeError     FTField(   rand(5, 5))
+    @test_throws TypeError     FTField(rand(5, 5))
     @test_throws ArgumentError FTField(5)
     @test_throws ArgumentError FTField(im*rand(5, 5))
     @test_throws ArgumentError FTField(im*rand(5, 3))
