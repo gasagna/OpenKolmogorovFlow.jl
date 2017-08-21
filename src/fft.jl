@@ -35,6 +35,8 @@ function _ForwardFFT!(v::Field{m}, tmp::Union{FTField{m}, Void}, flags::UInt32) 
     ForwardFFT!{m, typeof(tmp), typeof(plan)}(tmp, plan)
 end
 
+# For details about the following two methods see below, for InverseFFT
+
 # different size - de-aliased calculations - create temporary
 ForwardFFT!(outType::Type{<:FTField{n, Complex{T}}}, u::Field{m, T}, flags::UInt32=FFTW.MEASURE) where {m, n, T} =
     _ForwardFFT!(u, FTField(m, Complex{T}), flags)
@@ -69,6 +71,21 @@ function _InverseFFT!(V::FTField{m}, tmp::Union{FTField{m}, Void}, flags::UInt32
     InverseFFT!{m, typeof(tmp), typeof(plan)}(tmp, plan)
 end
 
+# The following two methods are those used to create the FFTW plans. The input 
+# arguments are 
+#    - outType : the type of the output data that the transform produces
+#    - U       : an instance of the input data that the transform accepts
+#    - flags   : FFTW flags. See FFTW documentation. Default is MEASURE.
+# 
+# When an InverseFFT object has been created, it will adhere to a callable
+# interface. For instance:
+#
+# julia> f = InverseFFT!(Field{m, T}, U::FTField{m, Complex{T}})
+# julia> f(out, U)
+#
+# Note that the fieldsize of outType and U is used to determine whether 
+# the transform requires dealiasing or not.
+#
 # different size - dealised calculations - needs padding, so create a temporary
 InverseFFT!(outType::Type{<:Field{m, T}}, U::FTField{n, Complex{T}}, flags::UInt32=FFTW.MEASURE) where {m, n, T} =
     (tmp = FTField(m, Complex{T}); _InverseFFT!(tmp, tmp, flags))
