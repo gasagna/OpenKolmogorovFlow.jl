@@ -24,7 +24,7 @@ ImcA!(V::ImplicitTerm{n}, c::Real, y::FTField{n}, z::FTField{n}) where {n} =
     (z .= y ./ (1 .- c .* V.dx²dy² .* V.ν))
 
 # ~~~ THE NONLINEAR TERM OF THE GOVERNING EQUATIONS PLUS THE FORCING ~~~
-struct ExplicitTerm{n, m, T<:AbstractFloat, IT<:InverseFFT!, FT<:ForwardFFT!}
+struct ExplicitTerm{n, m, T<:Real, IT<:InverseFFT!, FT<:ForwardFFT!}
        ifft!::IT
         ftt!::FT
     kforcing::Int
@@ -103,7 +103,7 @@ end
 
 
 # ~~~ THE GOVERNING EQUATIONS ~~~
-struct VorticityEquation{n, m, T<:AbstractFloat}
+struct VorticityEquation{n, m, T<:Real}
     imTerm::ImplicitTerm{n, T}
     exTerm::ExplicitTerm{n, m, T}
     function VorticityEquation{n, m, T}(Re::Real,
