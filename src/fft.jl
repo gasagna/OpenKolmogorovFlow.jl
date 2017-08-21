@@ -8,7 +8,9 @@ export FFT, IFFT, ForwardFFT!, InverseFFT!, even_dealias_size
 _next_even(n::Int) = ifelse(iseven(n), n, n+1)
 
 # Return even `m`, the minimum size of a `Field{m}` that 
-# avoids aliasing on a `FTField{n}` of size `n`.
+# avoids aliasing on a `FTField{n}` of size `n`. The returned
+# size is not necessarily good for performance, and one should 
+# rather select a size that is optimal for his/her own hardware
 even_dealias_size(n::Int) = _next_even(3n>>1 + 1)
 
 # ~~~ ALLOCATING VERSIONS - Always Aliased ~~~ 
