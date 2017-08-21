@@ -9,6 +9,36 @@ using Base.Test
     @test eltype(u) == VarNum{Float64}
 end
 
+@testset "operators work on real and pert parts  " begin
+    # take example operator, the laplacian
+    Δ = DiffOperator(4, :xxyy, Float64)
+    
+    # define a field with known values
+    U = FTField(4, VarNum{Float64}) + 1 + 3*im + 2*δ + 4*δ*im
+    
+    # apply laplacian
+    V = Δ.*U
+
+    # test a few entries
+    @test V[0, 0] == -(0^2+0^2)*((1+3*im) + (2+4*im)*δ)
+    @test V[1, 1] == -(1^2+1^2)*((1+3*im) + (2+4*im)*δ)
+    @test V[2, 0] == -(2^2+0^2)*((1+3*im) + (2+4*im)*δ)
+
+    # take another example
+    ∂ₓ = DiffOperator(4, :x, Float64)
+    
+    # define a field with known values
+    U = FTField(4, VarNum{Float64}) + 1 + 3*im + 2*δ + 4*δ*im
+    
+    # apply laplacian
+    V = ∂ₓ.*U
+
+    # test a few entries
+    @test V[0, 0] == 0*im*((1+3*im) + (2+4*im)*δ)
+    @test V[0, 1] == 1*im*((1+3*im) + (2+4*im)*δ)
+    @test V[0, 2] == 2*im*((1+3*im) + (2+4*im)*δ)
+end
+
 @testset "FTField perturbation                   " begin
     @testset "set perturbation                       " begin
         U = FTField(4, VarNum{Float64})
