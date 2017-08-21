@@ -239,7 +239,7 @@ end
         u.data .= cos.(x .+ y) .+ sin.(x .+ y)
 
         # define aliased transform, same size
-        f! = ForwardFFT!(FTField{4}, u)
+        f! = ForwardFFT!(FTField{4, Complex{Float64}}, u)
 
         # apply to same field size
         f!(U, u)
@@ -259,7 +259,7 @@ end
         u.data .= cos.(x .+ y) .+ sin.(x .+ y)
 
         # define dealiased transform, go to smaller size
-        f! = ForwardFFT!(FTField{4}, u)
+        f! = ForwardFFT!(FTField{4, Complex{Float64}}, u)
         
         # apply to same field size
         f!(U, u)

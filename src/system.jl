@@ -45,14 +45,14 @@ struct ExplicitTerm{n, m, T<:Real, S<:Real, IT<:InverseFFT!, FT<:ForwardFFT!}
         m ≥ n     || throw(ArgumentError("`m` must be bigger than `n`, got `n, m= $n, $m`. Are you sure?"))
         
         # complex fields have size n
-        a, b, c, d = FTField.((n, n, n, n), T)
+        a, b, c, d = FTField.((n, n, n, n), Complex{T})
 
         # real fields (might) have (larger) size m
         f, g, h, i = Field.((m, m, m, m), T)
         
         # transforms
-        ifft! = InverseFFT!(  Field{m}, a,  flags)
-         fft! = ForwardFFT!(FTField{n}, f,  flags)
+        ifft! = InverseFFT!(Field{m, T}, a,  flags)
+         fft! = ForwardFFT!(FTField{n, Complex{T}}, f,  flags)
 
         new{n, m, T, S, typeof(ifft!), typeof(fft!)}(ifft!, fft!, kforcing, 
             a, b, c, d, 

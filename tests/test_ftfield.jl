@@ -2,7 +2,7 @@ using OpenKolmogorovFlow
 using Base.Test
 
 @testset "input                                  " begin
-    @test_throws MethodError   FTField(   rand(5, 5))
+    @test_throws TypeError     FTField(rand(5, 5))
     @test_throws ArgumentError FTField(5)
     @test_throws ArgumentError FTField(im*rand(5, 5))
     @test_throws ArgumentError FTField(im*rand(5, 3))
@@ -88,7 +88,7 @@ end
 @testset "similar                                " begin
     for n = [2, 4, 8]
         for T in [Float64, Float32]
-            U = FTField(n, T)
+            U = FTField(n, Complex{T})
             V = similar(U)
             @test typeof(V) == FTField{n, Complex{T}, Matrix{Complex{T}}}
         end

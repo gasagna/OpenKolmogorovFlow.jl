@@ -14,7 +14,7 @@ even_dealias_size(n::Int) = _next_even(3n>>1 + 1)
 # ~~~ ALLOCATING VERSIONS - Always Aliased ~~~ 
 # We need the copy on IFFT because irfft does not preserve input
  FFT(u::Field{n, T}) where {n, T} = 
-    ForwardFFT!(FTField{n, Complex{T}}, similar(u))(FTField(n, T), u)
+    ForwardFFT!(FTField{n, Complex{T}}, similar(u))(FTField(n, Complex{T}), u)
 IFFT(U::FTField{n, Complex{T}}) where {n, T} = 
     InverseFFT!(Field{n, T}, similar(U))(Field(n, T), copy(U))
 
@@ -33,13 +33,13 @@ function _ForwardFFT!(v::Field{m}, tmp::Union{FTField{m}, Void}, flags::UInt32) 
     ForwardFFT!{m, typeof(tmp), typeof(plan)}(tmp, plan)
 end
 
-# same size - aliased calculations - no temporary needed
-ForwardFFT!(::Type{<:FTField{m}}, u::Field{m}, flags::UInt32=FFTW.MEASURE) where {m} =
-    _ForwardFFT!(u, nothing, flags)
-
 # different size - de-aliased calculations - create temporary
-ForwardFFT!(::Type{<:FTField}, u::Field{m}, flags::UInt32=FFTW.MEASURE) where {m} =
-    _ForwardFFT!(u, FTField(m), flags)
+ForwardFFT!(outType::Type{<:FTField{n, Complex{T}}}, u::Field{m, T}, flags::UInt32=FFTW.MEASURE) where {m, n, T} =
+    _ForwardFFT!(u, FTField(m, Complex{T}), flags)
+
+# same size - aliased calculations - no temporary needed
+ForwardFFT!(outType::Type{<:FTField{m, Complex{T}}}, u::Field{m, T}, flags::UInt32=FFTW.MEASURE) where {m, T} =
+    _ForwardFFT!(u, nothing, flags)
 
 # same size - no worries
 (f::ForwardFFT!{m})(U::FTField{m}, u::Field{m}) where {m} = 
@@ -67,12 +67,12 @@ function _InverseFFT!(V::FTField{m}, tmp::Union{FTField{m}, Void}, flags::UInt32
     InverseFFT!{m, typeof(tmp), typeof(plan)}(tmp, plan)
 end
 
-# different size - dealised calculations - needs padding
-InverseFFT!(::Type{<:Field{m}}, U::FTField, flags::UInt32=FFTW.MEASURE) where {m} =
-    (tmp = FTField(m); _InverseFFT!(tmp, tmp, flags))
+# different size - dealised calculations - needs padding, so create a temporary
+InverseFFT!(outType::Type{<:Field{m, T}}, U::FTField{n, Complex{T}}, flags::UInt32=FFTW.MEASURE) where {m, n, T} =
+    (tmp = FTField(m, Complex{T}); _InverseFFT!(tmp, tmp, flags))
 
 # same size - aliased calculations - do not create temporary
-InverseFFT!(::Type{<:Field{m}}, U::FTField{m}, flags::UInt32=FFTW.MEASURE) where {m} =
+InverseFFT!(outType::Type{<:Field{m, T}}, U::FTField{m, Complex{T}}, flags::UInt32=FFTW.MEASURE) where {m, T} =
     _InverseFFT!(U, nothing, flags)
 
 # same size - no worries
