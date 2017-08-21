@@ -68,16 +68,15 @@ ExplicitTerm(n::Int, m::Int, kforcing::Int, ::Type{T}, ::Type{S}, flags::UInt32)
 function (Eq::ExplicitTerm{n})(t::Real, Ω::FTField{n}, Ω̇::FTField{n}, add::Bool=false) where {n}
     # ~~~ PRELIMINARIES ~~~
     # set mean to zero
-    Ω[0, 0] = 0.0
+    Ω[0, 0] = zero(eltype(Ω))
 
     # obtain vorticity derivatives
     Eq.∂Ω∂x .= Eq.dx .* Ω
     Eq.∂Ω∂y .= Eq.dy .* Ω
 
     # obtain velocity components. Set mean to zero.
-    Eq.U .= .- (Eq.dx²dy²) .\ Eq.∂Ω∂y; Eq.U[0, 0] = 0
-    Eq.V .=    (Eq.dx²dy²) .\ Eq.∂Ω∂x; Eq.V[0, 0] = 0
-
+    Eq.U .= .- (Eq.dx²dy²) .\ Eq.∂Ω∂y; Eq.U[0, 0] = zero(eltype(Eq.U))
+    Eq.V .=    (Eq.dx²dy²) .\ Eq.∂Ω∂x; Eq.V[0, 0] = zero(eltype(Eq.V))
     # ~~~ NONLINEAR TERM ~~
     # inverse transform to physical space into temporaries
     Eq.ifft!(Eq.u,    Eq.U)
