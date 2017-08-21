@@ -4,7 +4,7 @@ using IMEXRKCB
 using Base.Test
 
 @testset "field creation and broadcast           " begin
-    U = FTField(4, VarNum{Float64})
+    U = FTField(4, Complex{VarNum{Float64}})
     u = Field(4, VarNum{Float64})
     @test eltype(U) == Complex{VarNum{Float64}}
     @test eltype(u) == VarNum{Float64}
@@ -15,7 +15,7 @@ end
     Δ = DiffOperator(4, :xxyy, Float64)
     
     # define a field with known values
-    U = FTField(4, VarNum{Float64}) + 1 + 3*im + 2*δ + 4*δ*im
+    U = FTField(4, Complex{VarNum{Float64}}) + 1 + 3*im + 2*δ + 4*δ*im
     
     # apply laplacian
     V = Δ.*U
@@ -29,7 +29,7 @@ end
     ∂ₓ = DiffOperator(4, :x, Float64)
     
     # define a field with known values
-    U = FTField(4, VarNum{Float64}) + 1 + 3*im + 2*δ + 4*δ*im
+    U = FTField(4, Complex{VarNum{Float64}}) + 1 + 3*im + 2*δ + 4*δ*im
     
     # apply laplacian
     V = ∂ₓ.*U
@@ -42,7 +42,7 @@ end
 
 @testset "FTField perturbation                   " begin
     @testset "set perturbation                       " begin
-        U = FTField(4, VarNum{Float64})
+        U = FTField(4, Complex{VarNum{Float64}})
         p = FTField(randn(4, 3) + im*randn(4, 3))
         set_pert!(U, p)
         @test pert.(real.(U.data)) == real.(p.data)
@@ -53,7 +53,7 @@ end
     @testset "get perturbation                       " begin
         U_ = (randn(4, 3) + δ*randn(4, 3)) + im*(randn(4, 3) + δ*randn(4, 3))
         U = FTField(U_)
-        p = FTField(4, Float64)
+        p = FTField(4, Complex{Float64})
         get_pert!(U, p)
         @test real.(p.data) == pert.(real.(U_))
         @test imag.(p.data) == pert.(imag.(U_))
