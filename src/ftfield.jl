@@ -14,9 +14,10 @@ end
 fieldsize(::Type{FTField{n}}) where {n} = n
 fieldsize(::FTField{n})       where {n} = n
 
-FTField(n::Int) = FTField(n, Complex{Float64})
-FTField(n::Int, ::Type{T}) where {T} = FTField(zeros(T, n, n>>1+1))
-FTField(data::AbstractMatrix) = FTField{size(data, 1), eltype(data), typeof(data)}(data)
+FTField(n::Int) = FTField(n, Float64)
+FTField(n::Int, ::Type{T}) where {T<:Real} = FTField(zeros(Complex{T}, n, n>>1+1))
+FTField(data::AbstractMatrix{C}) where {C<:Complex} = 
+    FTField{size(data, 1), C, typeof(data)}(data)
 
 function FTField_checksize(data::AbstractMatrix, n::Int)
     M, N = size(data)

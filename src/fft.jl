@@ -14,7 +14,7 @@ even_dealias_size(n::Int) = _next_even(3n>>1 + 1)
 # ~~~ ALLOCATING VERSIONS - Always Aliased ~~~ 
 # We need the copy on IFFT because irfft does not preserve input
  FFT(u::Field{n, T}) where {n, T} = 
-    ForwardFFT!(FTField{n, Complex{T}}, similar(u))(FTField(n, Complex{T}), u)
+    ForwardFFT!(FTField{n, Complex{T}}, similar(u))(FTField(n, T), u)
 IFFT(U::FTField{n, Complex{T}}) where {n, T} = 
     InverseFFT!(Field{n, T}, similar(U))(Field(n, T), copy(U))
 
