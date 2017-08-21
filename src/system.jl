@@ -104,7 +104,7 @@ end
 
 # ~~~ THE GOVERNING EQUATIONS ~~~
 struct VorticityEquation{n, m, T<:Real, S<:Real}
-    imTerm::ImplicitTerm{n, T}
+    imTerm::ImplicitTerm{n, S}
     exTerm::ExplicitTerm{n, m, T, S}
     function VorticityEquation{n, m, T, S}(Re::Real,
                                            kforcing::Int, 
