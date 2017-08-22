@@ -83,6 +83,7 @@ end
                      (sqrt(2)*π, cos.(0.*x.+5.*y) .+ sin.(0.*x.+5.*y))]
         U = FFT(Field(u))
         @test abs(norm(U) - val) < TOL
+        @test_throws ArgumentError norm(U, 1)
     end
 end
 

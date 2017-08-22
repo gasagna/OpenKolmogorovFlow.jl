@@ -27,7 +27,9 @@ function Base.dot(Ω₁::FTField{n, Complex{T}}, Ω₂::FTField{n, Complex{T}}):
 end
 
 # Norm of a field
-Base.norm(Ω::FTField) = sqrt(dot(Ω, Ω))
+Base.norm(Ω::FTField, n::Int=2) = 
+    (n==2 || throw(ArgumentError("only the 2-norm is defined"));
+    sqrt(dot(Ω, Ω)))
 
 # Dot product of the difference (u-v, u-v)
 function dotdiff(Ω₁::FTField{n, Complex{T}}, Ω₂::FTField{n, Complex{T}})::T where {n, T}
