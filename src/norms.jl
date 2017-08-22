@@ -1,5 +1,7 @@
 # Definitions of dot products norms and distances
 
+export dotdiff
+
 function Base.dot(Ω₁::FTField{n, Complex{T}}, Ω₂::FTField{n, Complex{T}})::T where {n, T}
     @inbounds begin
         # initialise
@@ -24,4 +26,24 @@ function Base.dot(Ω₁::FTField{n, Complex{T}}, Ω₂::FTField{n, Complex{T}}):
     real(Σ*4π^2)
 end
 
+# Norm of a field
 Base.norm(Ω::FTField) = sqrt(dot(Ω, Ω))
+
+# Dot product of the difference (u-v, u-v)
+function dotdiff(Ω₁::FTField{n, Complex{T}}, Ω₂::FTField{n, Complex{T}})::T where {n, T}
+    @inbounds begin
+        Σ1, Σ2 = zero(T), zero(T)
+        d = n>>1
+        @simd for k = 2:n
+            Σ1 += abs2(Ω₁[k]-Ω₂[k])
+        end
+        @simd for k = (n+1):(n*d+n)
+            Σ2 += abs2(Ω₁[k]-Ω₂[k])
+        end
+        Σ = 2*Σ2 + Σ1
+        Σ -= abs2(Ω₁[d, 0] -Ω₂[d, 0])*0.5
+        Σ -= abs2(Ω₁[0, d] -Ω₂[0, d])*1.5
+        Σ -= abs2(Ω₁[d, d] -Ω₂[d, d])*1.5
+    end
+    Σ*4π^2
+end

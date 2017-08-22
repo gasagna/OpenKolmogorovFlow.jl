@@ -68,7 +68,7 @@ end
 @testset "dot product performance                " begin
     u = randn(100, 100); U = FFT(Field(u))
     v = randn(100, 100); V = FFT(Field(v))
-    @test minimum([@elapsed dot(U, V) for i = 1:100000]) < 4*10.0^(-6)
+    @test minimum([@elapsed dot(U, V) for i = 1:100000]) < 4.5*10.0^(-6)
 end
 
 @testset "norm                                   " begin
@@ -84,4 +84,19 @@ end
         U = FFT(Field(u))
         @test abs(norm(U) - val) < TOL
     end
+end
+
+@testset "diff                                   " begin
+    x, y = make_grid(100)
+
+    # tolerance on integrals
+    TOL = 1e-14
+ 
+    u = sin.(1.*x.+1.*y); U = FFT(Field(u))
+    v = sin.(1.*x.+1.*y); V = FFT(Field(v))
+    @test dotdiff(U, V) == 0
+
+    u = 2*sin.(1.*x.+1.*y); U = FFT(Field(u))
+    v =   sin.(1.*x.+1.*y); V = FFT(Field(v))
+    @test dotdiff(U, V) == 2π^2
 end
