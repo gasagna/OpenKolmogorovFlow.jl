@@ -1,3 +1,5 @@
+import FFTW: unsafe_execute!, plan_rfft, plan_brfft
+
 export FFT, IFFT, ForwardFFT!, InverseFFT!, even_dealias_size
 
 # ~~~ UTILS ~~~
@@ -6,13 +8,17 @@ export FFT, IFFT, ForwardFFT!, InverseFFT!, even_dealias_size
 _next_even(n::Int) = ifelse(iseven(n), n, n+1)
 
 # Return even `m`, the minimum size of a `Field{m}` that 
-# avoids aliasing on a `FTField{n}` of size `n`.
+# avoids aliasing on a `FTField{n}` of size `n`. The returned
+# size is not necessarily good for performance, and one should 
+# rather select a size that is optimal for his/her own hardware
 even_dealias_size(n::Int) = _next_even(3n>>1 + 1)
 
 # ~~~ ALLOCATING VERSIONS - Always Aliased ~~~ 
 # We need the copy on IFFT because irfft does not preserve input
- FFT(u::Field{n})   where {n} = ForwardFFT!(FTField{n}, similar(u))(FTField(n),    u)
-IFFT(U::FTField{n}) where {n} = InverseFFT!(Field{n},   similar(U))(Field(n), copy(U))
+ FFT(u::Field{n, T}) where {n, T} = 
+    ForwardFFT!(FTField{n, Complex{T}}, similar(u))(FTField(n, Complex{T}), u)
+IFFT(U::FTField{n, Complex{T}}) where {n, T} = 
+    InverseFFT!(Field{n, T}, similar(U))(Field(n, T), copy(U))
 
 
 # ~~~ NON ALLOCATING VERSION ~~~
@@ -29,17 +35,19 @@ function _ForwardFFT!(v::Field{m}, tmp::Union{FTField{m}, Void}, flags::UInt32) 
     ForwardFFT!{m, typeof(tmp), typeof(plan)}(tmp, plan)
 end
 
-# same size - aliased calculations - no temporary needed
-ForwardFFT!(::Type{<:FTField{m}}, u::Field{m}, flags::UInt32=FFTW.MEASURE) where {m} =
-    _ForwardFFT!(u, nothing, flags)
+# For details about the following two methods see below, for InverseFFT
 
 # different size - de-aliased calculations - create temporary
-ForwardFFT!(::Type{<:FTField}, u::Field{m}, flags::UInt32=FFTW.MEASURE) where {m} =
-    _ForwardFFT!(u, FTField(m), flags)
+ForwardFFT!(outType::Type{<:FTField{n, Complex{T}}}, u::Field{m, T}, flags::UInt32=FFTW.MEASURE) where {m, n, T} =
+    _ForwardFFT!(u, FTField(m, Complex{T}), flags)
+
+# same size - aliased calculations - no temporary needed
+ForwardFFT!(outType::Type{<:FTField{m, Complex{T}}}, u::Field{m, T}, flags::UInt32=FFTW.MEASURE) where {m, T} =
+    _ForwardFFT!(u, nothing, flags)
 
 # same size - no worries
 (f::ForwardFFT!{m})(U::FTField{m}, u::Field{m}) where {m} = 
-    (A_mul_B!(U.data, f.plan, u.data); U .*= 1/m^2; U)
+    (unsafe_execute!(f.plan, u.data, U.data); U .*= 1/m^2; U)
 
 # different size - use temporary and shrink
 (f::ForwardFFT!{m})(U::FTField, u::Field{m}) where {m} = 
@@ -63,17 +71,32 @@ function _InverseFFT!(V::FTField{m}, tmp::Union{FTField{m}, Void}, flags::UInt32
     InverseFFT!{m, typeof(tmp), typeof(plan)}(tmp, plan)
 end
 
-# different size - dealised calculations - needs padding
-InverseFFT!(::Type{<:Field{m}}, U::FTField, flags::UInt32=FFTW.MEASURE) where {m} =
-    (tmp = FTField(m); _InverseFFT!(tmp, tmp, flags))
+# The following two methods are those used to create the FFTW plans. The input 
+# arguments are 
+#    - outType : the type of the output data that the transform produces
+#    - U       : an instance of the input data that the transform accepts
+#    - flags   : FFTW flags. See FFTW documentation. Default is MEASURE.
+# 
+# When an InverseFFT object has been created, it will adhere to a callable
+# interface. For instance:
+#
+# julia> f = InverseFFT!(Field{m, T}, U::FTField{m, Complex{T}})
+# julia> f(out, U)
+#
+# Note that the fieldsize of outType and U is used to determine whether 
+# the transform requires dealiasing or not.
+#
+# different size - dealised calculations - needs padding, so create a temporary
+InverseFFT!(outType::Type{<:Field{m, T}}, U::FTField{n, Complex{T}}, flags::UInt32=FFTW.MEASURE) where {m, n, T} =
+    (tmp = FTField(m, Complex{T}); _InverseFFT!(tmp, tmp, flags))
 
 # same size - aliased calculations - do not create temporary
-InverseFFT!(::Type{<:Field{m}}, U::FTField{m}, flags::UInt32=FFTW.MEASURE) where {m} =
+InverseFFT!(outType::Type{<:Field{m, T}}, U::FTField{m, Complex{T}}, flags::UInt32=FFTW.MEASURE) where {m, T} =
     _InverseFFT!(U, nothing, flags)
 
 # same size - no worries
 @inline (i::InverseFFT!{m})(u::Field{m}, U::FTField{m}) where {m} =
-    (A_mul_B!(u.data, i.plan, U.data); u)
+    (unsafe_execute!(i.plan, U.data, u.data); u)
 
 # different size - grow `n` up to `m` then transform. Up to user
 # to make sure that `U` has size that makes sense for dealiasing.

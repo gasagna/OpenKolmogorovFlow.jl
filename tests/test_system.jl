@@ -24,7 +24,7 @@ using Base.Test
                      IMEXRK3R2R(IMEXRKCB3e, false),
                      IMEXRK4R3R(IMEXRKCB4,  false)]
         
-            # define T-time forward map
+            # define integrator
             f = integrator(N, L, IMEXRKScheme(impl, Ω₀), 0.005)
 
             # start from some non zero initial condition

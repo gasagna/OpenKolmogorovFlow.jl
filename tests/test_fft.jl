@@ -1,5 +1,6 @@
 using OpenKolmogorovFlow
 using Base.Test
+using VariationalNumbers
 
 @testset "allocating - some tests                " begin 
     # make grid
@@ -238,7 +239,7 @@ end
         u.data .= cos.(x .+ y) .+ sin.(x .+ y)
 
         # define aliased transform, same size
-        f! = ForwardFFT!(FTField{4}, u)
+        f! = ForwardFFT!(FTField{4, Complex{Float64}}, u)
 
         # apply to same field size
         f!(U, u)
@@ -258,7 +259,7 @@ end
         u.data .= cos.(x .+ y) .+ sin.(x .+ y)
 
         # define dealiased transform, go to smaller size
-        f! = ForwardFFT!(FTField{4}, u)
+        f! = ForwardFFT!(FTField{4, Complex{Float64}}, u)
         
         # apply to same field size
         f!(U, u)
@@ -270,4 +271,24 @@ end
         U[1, 1] = 0
         @test maximum(abs, U.data) < 1e-14
     end
+end
+
+@testset "with VariationalNumbers                " begin
+    # test allocating versions, as these are based on the non-allocating ones
+    # construct random data
+    u_ = randn(4, 4) + δ*randn(4, 4)
+    U_ = rfft(real.(u_), [2, 1])/16 + δ*rfft(pert.(u_), [2, 1])/16
+
+    # create field and transform
+    U = FTField(U_)
+    u = IFFT(U)
+    # FIXME: make Field one-based
+    @test maximum(abs, pert.(u.data) - pert.(u_)) < 1e-15
+    @test maximum(abs, real.(u.data) - real.(u_)) < 1e-15
+
+    V = FFT(u)
+    @test maximum(abs, real.(real.(V.data)) - real.(real.(U_))) < 1e-15
+    @test maximum(abs, real.(imag.(V.data)) - real.(imag.(U_))) < 1e-15
+    @test maximum(abs, pert.(real.(V.data)) - pert.(real.(U_))) < 1e-15
+    @test maximum(abs, pert.(imag.(V.data)) - pert.(imag.(U_))) < 1e-15
 end
