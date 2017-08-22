@@ -2,11 +2,11 @@
 
 function Base.dot(Ω₁::FTField{n, Complex{T}}, Ω₂::FTField{n, Complex{T}})::T where {n, T}
     @inbounds begin
-        # initialise, skipping the (0, 0) mode, assumed zero
+        # initialise
         Σ1, Σ2 = zero(Complex{T}), zero(Complex{T})
         # loop
         d = n>>1
-        # count j = 0 with weight 1
+        # count j = 0 with weight 1, skip the (0, 0) mode, assumed zero
         @simd for k = 2:n
             Σ1 += Ω₁[k]*conj(Ω₂[k])
         end

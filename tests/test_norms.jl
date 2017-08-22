@@ -27,6 +27,14 @@ using Base.Test
     v = cos.(0.*x.+5.*y); V = FFT(Field(v))
     @test abs(dot(U, V) - 2π^2) < TOL
 
+    u = cos.(1.*x.+5.*y) .+ sin.(1.*x.+5.*y); U = FFT(Field(u))
+    v = cos.(1.*x.+5.*y) .+ sin.(1.*x.+5.*y); V = FFT(Field(v))
+    @test abs(dot(U, V) - 2*2π^2) < TOL
+
+    u = cos.(1.*x.+5.*y); U = FFT(Field(u))
+    v = cos.(1.*x.+5.*y); V = FFT(Field(v))
+    @test abs(dot(U, V) - 2π^2) < TOL
+
     u = 0.2*cos.(0.*x.+5.*y); U = FFT(Field(u))
     v = 0.4*cos.(0.*x.+5.*y); V = FFT(Field(v))
     @test abs(dot(U, V) - 0.08*2π^2) < TOL
