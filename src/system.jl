@@ -66,7 +66,6 @@ ExplicitTerm(n::Int, m::Int, kforcing::Int, ::Type{T}, ::Type{S}, flags::UInt32)
      ExplicitTerm{n, m, T, S}(kforcing, flags)
 
 function (Eq::ExplicitTerm{n})(t::Real, Ω::FTField{n}, Ω̇::FTField{n}, add::Bool=false) where {n}
-    # ~~~ PRELIMINARIES ~~~
     # set mean to zero
     Ω[0, 0] = zero(eltype(Ω))
 
@@ -77,7 +76,7 @@ function (Eq::ExplicitTerm{n})(t::Real, Ω::FTField{n}, Ω̇::FTField{n}, add::B
     # obtain velocity components. Set mean to zero.
     Eq.U .= .- (Eq.dx²dy²) .\ Eq.∂Ω∂y; Eq.U[0, 0] = zero(eltype(Eq.U))
     Eq.V .=    (Eq.dx²dy²) .\ Eq.∂Ω∂x; Eq.V[0, 0] = zero(eltype(Eq.V))
-    # ~~~ NONLINEAR TERM ~~
+    
     # inverse transform to physical space into temporaries
     Eq.ifft!(Eq.u,    Eq.U)
     Eq.ifft!(Eq.v,    Eq.V)
@@ -97,6 +96,7 @@ function (Eq::ExplicitTerm{n})(t::Real, Ω::FTField{n}, Ω̇::FTField{n}, add::B
     # ~~~ FORCING TERM ~~~
     Ω̇[ Eq.kforcing, 0] -= Eq.kforcing/2
     Ω̇[-Eq.kforcing, 0] -= Eq.kforcing/2
+
     return nothing
 end
 
