@@ -83,16 +83,14 @@ function growto!(W::FTField{m}, U::FTField{n}) where {m, n}
     @inbounds begin
         dU = n>>1
         W .= 0
-        for j = 0:dU, k = 0:dU
+        for j = 0:dU, k = -dU+1:dU
             W[k, j] = U[k, j]
         end
         # make sure we preserve the appropriate weight for extreme frequencies
-        W[dU,  0] *= 0.5
+        W[ dU, 0] *= 0.5
+        W[-dU, 0]  = W[ dU, 0]
         W[0,  dU] *= 0.5
         W[dU, dU] *= 0.5
-        for k = -dU:0
-            W[k, 0] = conj(W[-k, 0])
-        end    
     end
     W
 end

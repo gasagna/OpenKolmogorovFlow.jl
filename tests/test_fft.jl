@@ -55,6 +55,33 @@ end
     @test maximum(abs, FFT(IFFT(U)).data - U.data) < 1e-15
 end
 
+@testset "allocating - forw/inv - interpolate    " begin
+    n = 10
+    x_coarse, y_coarse = make_grid(n)
+    for k = -5:5
+        u_coarse = Field(cos.(k.*x_coarse.+0.*y_coarse))
+        U = FFT(u_coarse)
+    
+        # go backwards on a finer grid
+        u_fine = IFFT(U, 2n)
+
+        # this should match 
+        x_fine, y_fine = make_grid(2*n)
+        @test maximum(abs, u_fine.data - cos.(k.*x_fine.+0.*y_fine)) < 3e-15
+    end
+end
+
+@testset "growto!                                " begin
+    # growing a field should not change its energy
+    srand(0)
+    n = 6
+    u = Field(randn(n, n))
+    U = FFT(u)
+    for m = [6, 8, 10, 12]
+        @test norm(U) == norm(growto!(FTField(m, Complex{Float64}), U))
+    end
+end
+
 @testset "utils                                  " begin
     # the reasoning is as follows. on a n × n grid the largest wave is
     # n/2. When you square this wave you get a wave at a frequency n.
