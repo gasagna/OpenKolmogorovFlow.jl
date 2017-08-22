@@ -23,3 +23,5 @@ function Base.dot(Ω₁::FTField{n, Complex{T}}, Ω₂::FTField{n, Complex{T}}):
     # remember ∫∫eⁱ⁰dxdy = 4π^2
     real(Σ*4π^2)
 end
+
+Base.norm(Ω::FTField) = sqrt(dot(Ω, Ω))

@@ -70,3 +70,18 @@ end
     v = randn(100, 100); V = FFT(Field(v))
     @test minimum([@elapsed dot(U, V) for i = 1:100000]) < 4*10.0^(-6)
 end
+
+@testset "norm                                   " begin
+    x, y = make_grid(10)
+
+    # tolerance on integrals
+    TOL = 1e-14
+ 
+    for (val, u) in [(sqrt(2)*π, sin.(1.*x.+1.*y)), 
+                     (2*π,       cos.(1.*x.+2.*y) .+ sin.(1.*x.+2.*y)),
+                     (2*π,       cos.(0.*x.+5.*y) .+ sin.(1.*x.+5.*y)),
+                     (sqrt(2)*π, cos.(0.*x.+5.*y) .+ sin.(0.*x.+5.*y))]
+        U = FFT(Field(u))
+        @test abs(norm(U) - val) < TOL
+    end
+end
