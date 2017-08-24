@@ -119,7 +119,7 @@ function VorticityEquation(n::Int,
                            Re::Real, 
                            kforcing::Int=4; 
                            T::Type{<:Real}=Float64,
-                           flags::UInt32=FFTW.MEASURE, 
+                           flags::UInt32=FFTW.PATIENT, 
                            dealias::Union{Bool, Int}=true)
     # if dealias is an int we interpret it as the size of the
     # larger grid over which we do interpolation, and assume that
