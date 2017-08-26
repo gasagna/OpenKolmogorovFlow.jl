@@ -235,7 +235,6 @@ end
         # smaller                                         
         w = FTField(4)
         shrinkto!(w, v)
-        # TODO: preserve conjugate symmetry of modes of last column
         expected = Complex{Float64}[1+0im          5-7im  2sqrt(5^2+4^2)
                                     3+4im          3+3im  4-3im 
                                     2sqrt(4^2+1^2) 7+3im  sqrt(3^2+4^2)
