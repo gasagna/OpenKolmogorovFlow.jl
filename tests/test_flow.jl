@@ -6,7 +6,7 @@ using Base.Test
     Re = rand()
     kf = 4
     Ω = laminarflow(10, Re, kf)
-    @test DissipationRate(Ω, Re) ≈ Re/2/kf^2
+    @test dissrate(Ω, Re) ≈ Re/2/kf^2
 
     # test on some other flows
     n = 4
@@ -15,7 +15,7 @@ using Base.Test
     # phase shift does not change dissipation
     Ωa = FFT(Field(cos.(x.+y)))
     Ωb = FFT(Field(sin.(x.+y)))
-    @test DissipationRate(Ωa, 1.0) == DissipationRate(Ωb, 1.0)
+    @test dissrate(Ωa, 1.0) == dissrate(Ωb, 1.0)
    
     # for any wave dissipation is 1/2/Re
     d = n>>1 + 1
@@ -23,14 +23,14 @@ using Base.Test
         if !(j == 0 && k == 0)
             Re = randn()
             Ω = FFT(Field(cos.(j.*x.+k.*y)))
-            @test DissipationRate(Ω, Re) ≈ 1/2/Re
+            @test dissrate(Ω, Re) ≈ 1/2/Re
         end
     end
 
     # test no allocations 
-    @test (@allocated DissipationRate(Ω, 1.0)) == 16
+    @test (@allocated dissrate(Ω, 1.0)) == 16
     
     # warm up with int
-    DissipationRate(Ω, 1)
-    @test (@allocated DissipationRate(Ω, 1)) == 16
+    dissrate(Ω, 1)
+    @test (@allocated dissrate(Ω, 1)) == 16
 end

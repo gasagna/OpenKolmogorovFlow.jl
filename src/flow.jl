@@ -1,4 +1,4 @@
-export laminarflow, DissipationRate
+export laminarflow, dissrate
 
 """
     Returns the vorticity field of the laminar flow.
@@ -13,7 +13,7 @@ end
 """
     Energy dissipation rate density associated to vorticity field `U`
 """
-function DissipationRate(U::FTField{n}, Re::Real) where n
+function dissrate(U::FTField{n}, Re::Real) where n
     d = n>>1
     val = zero(abs(U[0, 0])^2)
     for k=-d+1:d
