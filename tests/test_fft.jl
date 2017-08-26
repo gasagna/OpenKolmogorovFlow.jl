@@ -71,17 +71,6 @@ end
     end
 end
 
-@testset "growto!                                " begin
-    # growing a field should not change its energy
-    srand(0)
-    n = 6
-    u = Field(randn(n, n))
-    U = FFT(u)
-    for m = [6, 8, 10, 12]
-        @test norm(U) == norm(growto!(FTField(m, Complex{Float64}), U))
-    end
-end
-
 @testset "utils                                  " begin
     # the reasoning is as follows. on a n × n grid the largest wave is
     # n/2. When you square this wave you get a wave at a frequency n.
