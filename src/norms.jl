@@ -1,8 +1,13 @@
 # Definitions of dot products norms and distances
 
-export dotdiff
+export inner, innerdiff
 
-function Base.dot(Ω₁::FTField{n, Complex{T}}, Ω₂::FTField{n, Complex{T}})::T where {n, T}
+# This enables \cdot notation
+Base.dot(Ω₁::FTField{n}, Ω₂::FTField{n}) where {n} =
+    inner(Ω₁, Ω₂)
+
+# Inner product between two vorticity fields
+function inner(Ω₁::FTField{n, Complex{T}}, Ω₂::FTField{n, Complex{T}})::T where {n, T}
     @inbounds begin
         # initialise
         Σ1, Σ2 = zero(Complex{T}), zero(Complex{T})
@@ -29,10 +34,10 @@ end
 # Norm of a field
 Base.norm(Ω::FTField, n::Int=2) = 
     (n==2 || throw(ArgumentError("only the 2-norm is defined"));
-    sqrt(dot(Ω, Ω)))
+    sqrt(inner(Ω, Ω)))
 
-# Dot product of the difference (u-v, u-v)
-function dotdiff(Ω₁::FTField{n, Complex{T}}, Ω₂::FTField{n, Complex{T}})::T where {n, T}
+# Inner product of the difference (u-v, u-v)
+function innerdiff(Ω₁::FTField{n, Complex{T}}, Ω₂::FTField{n, Complex{T}})::T where {n, T}
     @inbounds begin
         Σ1, Σ2 = zero(T), zero(T)
         d = n>>1
