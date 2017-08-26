@@ -28,8 +28,9 @@ using Base.Test
     end
 
     # test no allocations 
-    @test (@allocated DissipationRate(Ω, Re)) == 16
-    @test (@allocated DissipationRate(Ω, Re)) == 16
-    @test (@allocated DissipationRate(Ω, Re)) == 16
-    @test (@allocated DissipationRate(Ω, Re)) == 16
+    @test (@allocated DissipationRate(Ω, 1.0)) == 16
+    
+    # warm up with int
+    DissipationRate(Ω, 1)
+    @test (@allocated DissipationRate(Ω, 1)) == 16
 end

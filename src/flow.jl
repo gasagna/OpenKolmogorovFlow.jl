@@ -15,7 +15,7 @@ end
 """
 function DissipationRate(U::FTField{n}, Re::Real) where n
     d = n>>1
-    val = zero(Re)
+    val = zero(abs(U[0, 0])^2)
     for k=-d+1:d
         for j=1:d-1
             @inbounds val += 2*abs(U[k, j])^2
