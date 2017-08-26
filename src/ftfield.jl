@@ -1,9 +1,13 @@
-# TODO
-# ~ check that setindex with k and j does not invalidate the fft
+export AbstractFTField, FTField, growto!, shrinkto!, fieldsize
 
-export FTField, growto!, shrinkto!, fieldsize
+# AbstractType for Fourier Transformed fields
+abstract type AbstractFTField{n, T} <: AbstractMatrix{T} end
+Base.indices(::AbstractFTField{n}) where {n} = (d = n>>1; (-d:d, -d:d))
+Base.linearindices(U::AbstractFTField{n}) where {n} = 1:(n*(n>>1+1))
+Base.IndexStyle(::Type{<:AbstractFTField}) = IndexLinear()
 
-struct FTField{n, T<:Complex, M<:AbstractMatrix{T}} <: AbstractMatrix{T}
+# Main type
+struct FTField{n, T<:Complex, M<:AbstractMatrix{T}} <: AbstractFTField{n, T}
     data::M
     function FTField{n, T, M}(data::M) where {n, T, M}
         FTField_checksize(data, n)
@@ -52,10 +56,6 @@ end
     val
 end
 
-# `indices` is used for bounds checking
-Base.indices(::FTField{n}) where {n} = (d = n>>1; (-d:d, -d:d))
-Base.linearindices(U::FTField) = eachindex(U.data)
-Base.IndexStyle(::Type{<:FTField}) = IndexLinear()
 Base.unsafe_get(U::FTField) = U.data
 
 # allow constructing similar fields. Used by IMEXRKCB to allocate storage.

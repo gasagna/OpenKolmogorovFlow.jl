@@ -2,11 +2,11 @@
 export inner, innerdiff
 
 # This enables \cdot notation
-Base.dot(Ω₁::FTField{n}, Ω₂::FTField{n}) where {n} =
+Base.dot(Ω₁::AbstractFTField{n}, Ω₂::AbstractFTField{n}) where {n} =
     inner(Ω₁, Ω₂)
 
 # Inner product between two vorticity fields
-function inner(Ω₁::FTField{n, Complex{T}}, Ω₂::FTField{n, Complex{T}})::T where {n, T}
+function inner(Ω₁::AbstractFTField{n, Complex{T}}, Ω₂::AbstractFTField{n, Complex{T}})::T where {n, T}
     @inbounds begin
         # initialise
         Σ1, Σ2 = zero(Complex{T}), zero(Complex{T})
@@ -31,12 +31,12 @@ function inner(Ω₁::FTField{n, Complex{T}}, Ω₂::FTField{n, Complex{T}})::T 
 end
 
 # Norm of a field
-Base.norm(Ω::FTField, n::Int=2) = 
+Base.norm(Ω::AbstractFTField, n::Int=2) = 
     (n==2 || throw(ArgumentError("only the 2-norm is defined"));
     sqrt(inner(Ω, Ω)))
 
 # Inner product of the difference (u-v, u-v)
-function innerdiff(Ω₁::FTField{n, Complex{T}}, Ω₂::FTField{n, Complex{T}})::T where {n, T}
+function innerdiff(Ω₁::AbstractFTField{n, Complex{T}}, Ω₂::AbstractFTField{n, Complex{T}})::T where {n, T}
     @inbounds begin
         Σ1, Σ2 = zero(T), zero(T)
         d = n>>1
