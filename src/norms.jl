@@ -1,5 +1,4 @@
-# Definitions of dot products norms and distances
-
+# Definitions of inner products, norms and distances
 export inner, innerdiff
 
 # This enables \cdot notation
