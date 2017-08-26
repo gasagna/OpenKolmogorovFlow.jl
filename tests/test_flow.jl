@@ -5,6 +5,7 @@ using Base.Test
     # test on laminar flow
     Re = rand()
     kf = 4
+    @test_throws ArgumentError laminarflow(10, Re, 6)
     Ω = laminarflow(10, Re, kf)
     @test dissrate(Ω, Re) ≈ Re/2/kf^2
 
