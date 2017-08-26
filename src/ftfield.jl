@@ -105,10 +105,12 @@ function shrinkto!(W::FTField{n}, U::FTField{m}) where {n, m}
         for j = 0:dW, k = (-dW+1):dW
             W[k, j] = U[k, j]
         end
-        # extreme frequencies count twice
-        W[dW,  0] = 2*real(W[dW,  0])
-        W[0,  dW] = 2*real(W[0,  dW])
-        W[dW, dW] = 2*real(W[dW, dW])
+        # attempt to preserve the energy
+        W[dW,  0] = 2*abs(U[dW, 0])
+        W[0,  dW] = 2*abs(U[0, dW])
+        W[dW, dW] =   sqrt(abs(U[dW, dW])^2 + abs(U[-dW, dW])^2)
+        # TODO: make sure we preserve the conjugate symmetry 
+        # of modes on last column, whilst preserving energy
     end
     W
 end
