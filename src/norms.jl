@@ -16,15 +16,19 @@ function inner(Ω₁::AbstractFTField{n, Complex{T}}, Ω₂::AbstractFTField{n, 
         @simd for k = 2:n
             Σ1 += Ω₁[k]*conj(Ω₂[k])
         end
-        # count all other with weight 2
-        @simd for k = (n+1):(n*d+n)
+        # count j=1:d with weight 2
+        @simd for k = (n+1):n*d
             Σ2 += Ω₁[k]*conj(Ω₂[k])
+        end
+        # count j=d+1 with weight 1
+        @simd for k = (n*d+1):(n*d+n)
+            Σ1 += Ω₁[k]*conj(Ω₂[k])
         end
         Σ = 2*Σ2 + Σ1
         # remove some elements counted with wrong weight
         Σ -= Ω₁[d, 0]*conj(Ω₂[d, 0])*0.5
-        Σ -= Ω₁[0, d]*conj(Ω₂[0, d])*1.5
-        Σ -= Ω₁[d, d]*conj(Ω₂[d, d])*1.5
+        Σ -= Ω₁[0, d]*conj(Ω₂[0, d])*0.5
+        Σ -= Ω₁[d, d]*conj(Ω₂[d, d])*0.5
     end
     # remember ∫∫eⁱ⁰dxdy = 4π^2
     real(Σ*4π^2)
@@ -43,13 +47,16 @@ function innerdiff(Ω₁::AbstractFTField{n, Complex{T}}, Ω₂::AbstractFTField
         @simd for k = 2:n
             Σ1 += abs2(Ω₁[k]-Ω₂[k])
         end
-        @simd for k = (n+1):(n*d+n)
+        @simd for k = (n+1):n*d
             Σ2 += abs2(Ω₁[k]-Ω₂[k])
+        end
+        @simd for k = (n*d+1):(n*d+n)
+            Σ1 += abs2(Ω₁[k]-Ω₂[k])
         end
         Σ = 2*Σ2 + Σ1
         Σ -= abs2(Ω₁[d, 0] -Ω₂[d, 0])*0.5
-        Σ -= abs2(Ω₁[0, d] -Ω₂[0, d])*1.5
-        Σ -= abs2(Ω₁[d, d] -Ω₂[d, d])*1.5
+        Σ -= abs2(Ω₁[0, d] -Ω₂[0, d])*0.5
+        Σ -= abs2(Ω₁[d, d] -Ω₂[d, d])*0.5
     end
     Σ*4π^2
 end

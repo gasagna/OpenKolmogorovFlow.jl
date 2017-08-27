@@ -51,6 +51,15 @@ using Base.Test
     v = 0.2*cos.(5.*x.+0.*y); V = FFT(Field(v))
     @test abs(inner(U, V) - 0.08*2π^2) < TOL
 
+    # two cases for testing last column of the fft
+    u = 0.4*cos.(5.*x.+1.*y); U = FFT(Field(u))
+    v = 0.3*cos.(5.*x.+1.*y); V = FFT(Field(v))
+    @test abs(inner(U, V) - 0.12*2π^2) < TOL
+
+    u = 0.4*cos.(5.*x.+1.*y) + 0.4*sin.(5.*x.+2.*y); U = FFT(Field(u))
+    v = 0.3*cos.(5.*x.+1.*y) + 0.3*sin.(5.*x.+2.*y); V = FFT(Field(v))
+    @test abs(inner(U, V) - 0.24*2π^2) < TOL
+
     # this does not fit on the grid, so it is zero
     u = sin.(0.*x.+5.*y); U = FFT(Field(u))
     v = sin.(0.*x.+5.*y); V = FFT(Field(v))
@@ -97,7 +106,7 @@ end
 end
 
 @testset "diff                                   " begin
-    x, y = make_grid(100)
+    x, y = make_grid(10)
 
     # tolerance on integrals
     TOL = 1e-14
@@ -108,5 +117,10 @@ end
 
     u = 2*sin.(1.*x.+1.*y); U = FFT(Field(u))
     v =   sin.(1.*x.+1.*y); V = FFT(Field(v))
+    @test innerdiff(U, V) == 2π^2
+
+    # corner case
+    u = 2*sin.(5.*x.+1.*y); U = FFT(Field(u))
+    v =   sin.(5.*x.+1.*y); V = FFT(Field(v))
     @test innerdiff(U, V) == 2π^2
 end
