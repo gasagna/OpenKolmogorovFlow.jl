@@ -12,15 +12,17 @@ end
 
 @testset "symmetries                             " begin
     for n = [2, 24]
+        U = FFT(Field(randn(n, n)))
         d = n>>1
-        U = FTField(rfft(randn(n, n), [2, 1]))
-        for k = -d:d, j=-d:d
-            @test abs(U[j, k] - conj(U[-j, -k])) < 1e-13
+        for k = (-d+1):d, j = (-d+1):d
+            # it is not exactly zero, because of FFTW does 
+            # not ensure exact conjugate symmetry
+            @test abs(U[j, k] - conj(U[-j, -k])) < 1e-16
         end
     end
 end
 
-@testset "cartesian                              " begin
+@testset "cartesian indexing                     " begin
     # construct data with appropriate symmetries
     data = [1+2im  9+10im 17+0im
             3+4im 11+12im 19+20im
@@ -67,20 +69,10 @@ end
     end
 end
 
-@testset "symmetry                               " begin
-    for n = [2, 24]
-        d = n>>1
-        U = FTField(rfft(randn(n, n), [2, 1]))
-        for k = -d:d, j=-d:d
-            @test abs(U[j, k] - conj(U[-j, -k])) < 1e-13
-        end
-    end
-end
-
-@testset "linear                                 " begin
+@testset "linear indexing                        " begin
     data = rfft(randn(6, 6), [2, 1])
     u = FTField(data)
-    for i in 1:length(data)
+    for i in eachindex(data)
         @test u[i] == data[i]
     end
 end
@@ -174,42 +166,12 @@ end
 end
 
 @testset "grow/shrink-to!                        " begin
-    @testset "growto!                                " begin
+    @testset "growto!                            " begin
         # growing a field should not change its energy
-        srand(0)
-        n = 6
-        u = Field(randn(n, n))
-        U = FFT(u)
-        for m = [6, 8, 10, 12]
-            @test norm(U) == norm(growto!(FTField(m, Complex{Float64}), U))
+        U = FFT(Field(randn(6, 6)))
+        for m = [6, 12, 24, 48]
+            @test norm(U) ≈ norm(growto!(FTField(m, Complex{Float64}), U))
         end
-
-        data = Complex{Float64}[1+0im  9+10im 16+0im
-                                3+4im 11+12im 19+20im
-                                6+0im 13+14im 22+0im
-                                3-4im 15+16im 19-20im]
-        u = FTField(data)
-
-        # smaller size
-        v = FTField(2)
-        @test_throws ArgumentError growto!(v, u)
-        
-        # same size
-        v = FTField(4)
-        growto!(v, u)
-        @test v == u
-
-        # larger size
-        v = FTField(6)
-        growto!(v, u)
-
-        # note how the frequencies (2, 0), (0, 2) and (2, 2) are halved
-        @test v.data == Complex{Float64}[  1+0im  9+10im   8+0im   0+0im
-                                           3+4im 11+12im  19+20im  0+0im
-                                           3+0im 13+14im  11+0im   0+0im
-                                           0+0im  0+0im    0+0im   0+0im
-                                           3+0im  0+0im    0+0im   0+0im
-                                           3-4im 15+16im  19-20im  0+0im]
     end
     @testset "shrinkto!                          " begin
         data = Complex{Float64}[1+0im 5-7im 5+4im 16+0im
