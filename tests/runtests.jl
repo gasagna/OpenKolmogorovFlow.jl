@@ -1,11 +1,3 @@
-# a useful macro for printing arrays
-macro display(ex)
-    quote
-        display($(esc(ex)))
-        println()
-    end
-end
-
 include("test_allocation.jl")
 include("test_broadcast.jl")
 include("test_fft.jl")
