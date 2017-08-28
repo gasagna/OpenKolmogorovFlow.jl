@@ -12,23 +12,5 @@ function laminarflow(n::Int, Re::Real, kforcing::Int=4)
     Ω
 end
 
-"""
-    Energy dissipation rate density associated to vorticity field `U`
-"""
-function dissrate(U::FTField{n}, Re::Real) where n
-    @inbounds begin
-        d = n>>1
-        val = zero(abs(U[0, 0])^2)
-        for k=-d+1:d
-            for j=1:d-1
-                val += 2*abs(U[k, j])^2
-            end
-            val +=  abs(U[k, 0])^2 + abs(U[k, d])^2
-        end
-        # count properly contribution of extreme cases
-        val += -abs(U[d, d])^2 + 2*abs(U[d, d]/2)^2
-        val += -abs(U[0, d])^2 + 2*abs(U[0, d]/2)^2
-        val += -abs(U[d, 0])^2 + 2*abs(U[d, 0]/2)^2
-    end
-    val/Re
-end
+# Energy dissipation rate density associated to vorticity field `Ω`
+dissrate(Ω::FTField{n}, Re::Real) where {n} = (@Σ_jk n abs2(Ω[jk]))/Re
