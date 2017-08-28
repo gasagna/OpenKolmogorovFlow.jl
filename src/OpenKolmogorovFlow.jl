@@ -5,6 +5,7 @@ using VariationalNumbers
 
 include("operators.jl")
 include("indexing.jl")
+include("utils.jl")
 include("ftfield.jl")
 include("field.jl")
 include("fft.jl")
