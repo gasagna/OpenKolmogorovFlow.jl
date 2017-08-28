@@ -50,7 +50,9 @@ macro Σ_jk(n, expr)
         # sum contributions
         bulk = 2*Σ₂ + Σ₁
         # must remove the contributions at the Nyquist
-        # frequencies counted as exp^0 rather than cos^2
+        # frequencies counted as exp^0 rather than cos^2. This
+        # is only valid for terms that are quadratic, but
+        # these seem to be the majority, actually
         for $(esc(i)) in (d+1, d*$(esc(n))+1, d*$(esc(n))+1+d)
             bulk -= 0.5*$(esc(expr))
         end
