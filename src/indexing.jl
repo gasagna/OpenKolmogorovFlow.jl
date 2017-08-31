@@ -9,7 +9,8 @@
 # Return the 'k' or 'j' wave numbers corresponding to storage location 
 # `i`, for a grid with `n` points
 @inline ItoJ(i::Int, n::Int) = div(i-1, n)
-@inline ItoK(i::Int, n::Int) = (k=rem(i, n)-1; ifelse(k>n>>1, k-n, k))
+@inline ItoK(i::Int, n::Int) = (k=rem(i-1, n); ifelse(k>n>>1, k-n, k))
+@inline ItoKJ(i, n) = (ItoK(i, n), ItoJ(i, n))
 
 # Return conjugate of `val` if `j` is negative. Other symmetries are taken
 # care of by the `KJtoI` function
