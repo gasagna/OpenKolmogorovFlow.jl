@@ -9,24 +9,33 @@ end
 # construct a shifted view of U
 struct Shifted{n, T, Sx, Sy, F<:AbstractFTField{n, T}} <: AbstractFTField{n, T}
          U::F  # original field
-    xcache::Sx #
-    ycache::Sy #
+    jcache::Sx # cache values of exp(im*j*s) for fast calculations
+    kcache::Sy #
 end
 
 # outer constructor
 function shifted(U::FTField{n, T}, Δ::Shift) where {n, T}
-    cx, cy = _xcache(Δ.s, n), _ycache(Δ.m, n)
-    Shifted{n, T, typeof(cx), typeof(cy), typeof(U)}(U, cx, cy)
+    jc, kc = jcache(n, Δ.s), kcache(n, Δ.m)
+    Shifted{n, T, typeof(jc), typeof(kc), typeof(U)}(U, jc, kc)
 end
 
-# build cache with complex exponentials for fast shifts
-_xcache(s, n) = ntuple(jj->cis((jj-1)*s/2π), n>>1+1)
-_ycache(m, n) = ntuple(jj->cis((jj-1)*m/2π), n)
+# Construct cache of exp(im*j*s) 
+jcache(n::Int, s::Real) = exp.(.-im.*js(n).*s)
+kcache(n::Int, m::Int)  = exp.(.-im.*ks(n).*m.*π./4)
 
 # Read only data type 
-Base.@propagate_inbounds @inline Base.getindex(S::Shifted{n}, i) where {n} = 
+Base.@propagate_inbounds @inline Base.getindex(S::Shifted{n}, i::Int) where {n} = 
     S[i, ItoKJ(i, n)...]
-Base.@propagate_inbounds @inline Base.getindex(S::Shifted, k, j) = 
-    S.U[k, j]*S.xcache[j+1]*S.ycache[k+1]
-Base.@propagate_inbounds @inline Base.getindex(S::Shifted, i, k, j) = 
-    S.U[i]*S.xcache[j+1]*S.ycache[k+1]
+Base.@propagate_inbounds @inline Base.getindex(S::Shifted{n}, k::Int, j::Int) where {n} = 
+    S.U[k, j]*S.jcache[JtoI(j)]*S.kcache[KtoI(k, n)]
+Base.@propagate_inbounds @inline Base.getindex(S::Shifted{n}, i::Int, k::Int, j::Int) where {n} = 
+    S.U[i]*S.jcache[JtoI(j)]*S.kcache[KtoI(k, n)]
+
+# Apply shift `Δ` to field `U`, in place
+function Base.shift!(U::FTField{n}, Δ::Shift) where {n}
+    jc, kc = jcache(n, Δ.s), kcache(n, Δ.m)
+    for jj = 1:n>>1+1, kk = 1:n
+        @inbounds U.data[kk, jj] *= jc[jj]*kc[kk]
+    end
+    U
+end
