@@ -21,5 +21,5 @@
 @inline rectify(val::Number, j::Int) = j < 0 ? conj(val) : val
 
 # Tuples of j and k wave numbers
-js(n) = NTuple{n>>1+1, Int}(j for j = 0:n>>1)
-ks(n) = NTuple{n, Int}(ItoK(i, n) for i = 1:n)
+js(n::Int) = ntuple(i->i-1,   n>>1+1)
+ks(n::Int) = ntuple(i->ItoK(i, n), n)
