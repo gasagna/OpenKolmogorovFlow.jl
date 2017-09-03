@@ -4,23 +4,23 @@ export Shift, shifted
 const Shift = Tuple{T, Int} where {T<:Real}
 
 # construct a shifted view of U
-struct Shifted{n, T, d, F<:AbstractFTField{n, T}} <: AbstractFTField{n, T}
-         U::F            # original field
-    jcache::NTuple{d, T} # cache values of exp(im*j*s) for fast calculations
-    kcache::NTuple{n, T} #
+struct Shifted{n, T, F<:AbstractFTField{n, T}} <: AbstractFTField{n, T}
+         U::F         # original field
+    jcache::Vector{T} # cache values of exp(im*j*s) for fast calculations
+    kcache::Vector{T} #
 end
 
 # outer constructor
 @generated function shifted(U::FTField{n, T}, Δ::Shift) where {n, T}
     quote
         jc, kc = jcache(n, Δ[1]), kcache(n, Δ[2])
-        Shifted{n, T, $(n>>1+1), typeof(U)}(U, jc, kc)
+        Shifted{n, T, typeof(U)}(U, jc, kc)
     end
 end
 
 # Construct cache of exp(im*j*s) 
-jcache(n::Int, s::Real) = ntuple(i->cis(-(i-1)*s),     n>>1+1)
-kcache(n::Int,  m::Int) = ntuple(i->cis(-ItoK(i, n)*m*π/4), n)
+jcache(n::Int, s::Real) = [cis(-j*s) for j = 0:n>>1]
+kcache(n::Int,  m::Int) = [cis(-ItoK(i, n)*m*π/4) for i = 1:n]
 
 # Read only data type 
 Base.@propagate_inbounds @inline Base.getindex(S::Shifted{n, T}, i::Int) where {n, T} = 
