@@ -6,7 +6,7 @@ using OpenKolmogorovFlow
     s, m = 0.123, 3
     data = rand(n, n)
     U = FFT(Field(data))
-    V = shifted(U, Shift(s, m))
+    V = shifted(U, (s, m))
     @test norm(U) ≈ norm(V)
 end
 
@@ -20,7 +20,7 @@ end
     Usin = FFT(Field(data))
 
     s, m = π/2, 0 
-    @test abs(innerdiff(Usin, shifted(Ucos, Shift(s, m)))) < 1e-20
+    @test abs(innerdiff(Usin, shifted(Ucos, (s, m)))) < 1e-20
 end
 
 @testset "do it up, by π/4                       " begin
@@ -33,7 +33,7 @@ end
     Usin = FFT(Field(data))
 
     s, m = 0, 1
-    @test abs(innerdiff(Usin, shifted(Ucos, Shift(s, m)))) < 1e-20
+    @test abs(innerdiff(Usin, shifted(Ucos, (s, m)))) < 1e-20
 end
 
 @testset "shift by exact fraction of grid size   " begin
@@ -46,7 +46,7 @@ end
                    3 4 5 6]
 
     U  = FFT(Field(data))
-    shift!(U, Shift(s, m))
+    shift!(U, (s, m))
     @test IFFT(U).data ≈ Float64[6 3 4 5;
                                  4 1 2 3;
                                  8 5 6 7;
