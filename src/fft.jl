@@ -50,9 +50,9 @@ ForwardFFT!(outType::Type{<:FTField{m, Complex{T}}}, u::Field{m, T}, flags::UInt
     (unsafe_execute!(f.plan, u.data, U.data); U .*= 1/m^2; U)
 
 # different size - use temporary and shrink
-(f::ForwardFFT!{m})(U::FTField, u::Field{m}) where {m} = 
-    shrinkto!(U, f(f.tmp, u))    
-
+(f::ForwardFFT!{m})(U::FTField, u::Field{m}) where {m} =
+    shrinkto!(U, f(f.tmp, u))
+    
 
 # ~~~ INVERSE TRANSFORM ~~~
 struct InverseFFT!{m, F, P}
