@@ -11,11 +11,9 @@ struct Shifted{n, T, F<:AbstractFTField{n, T}} <: AbstractFTField{n, T}
 end
 
 # outer constructor
-@generated function shifted(U::FTField{n, T}, Δ::Shift) where {n, T}
-    quote
-        jc, kc = jcache(n, Δ[1]), kcache(n, Δ[2])
-        Shifted{n, T, typeof(U)}(U, jc, kc)
-    end
+function shifted(U::FTField{n, T}, Δ::Shift) where {n, T}
+    jc, kc = jcache(n, Δ[1]), kcache(n, Δ[2])
+    Shifted{n, T, typeof(U)}(U, jc, kc)
 end
 
 # Construct cache of exp(im*j*s) 
