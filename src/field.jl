@@ -24,18 +24,24 @@ fieldsize(::Type{Field{n}}) where {n} = n
 fieldsize(::Field{n})       where {n} = n
 
 # ~~~ array interface ~~~
+@inline function reindex(n, i, j)
+    ii, jj = i%n + 1, j%n + 1
+    ii ≤ 0 && (ii += n)
+    jj ≤ 0 && (jj += n)
+    ii, jj
+end
 
-@inline function Base.getindex(f::Field, i::Int, j::Int)
+@inline function Base.getindex(f::Field{n}, i::Int, j::Int) where {n}
     P = f.data
-    @boundscheck checkbounds(f, i, j)
-    @inbounds ret = P[i+1, j+1]
+    ii, jj = reindex(n, i, j)
+    @inbounds ret = P[ii, jj]
     return ret
 end
 
-@inline function Base.setindex!(f::Field, val::Number, i::Int, j::Int)
+@inline function Base.setindex!(f::Field{n}, val::Number, i::Int, j::Int) where {n}
     P = f.data
-    @boundscheck checkbounds(f, i, j)
-    @inbounds P[i+1, j+1] = val
+    ii, jj = reindex(n, i, j)
+    @inbounds P[ii, jj] = val
     return val
 end
 
