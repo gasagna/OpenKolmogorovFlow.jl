@@ -32,16 +32,28 @@ function evalconjprod!(U::FTField{n}, V::FTField{n}, cache::XCorrCache{nc}) wher
     end
 end
 
-# Find peak of correlation function for y shifts m = 0, 1, 2, 3
+# Find peak of correlation function for y shifts m = 0, 1, 2, 3,
+# using a quadratic interpolation of the data points
 function locatepeak(r::Field{nc}) where {nc}
     rmax, mmax, smax = r[0, 0], 0, 0
-    for m = (0, 1, 2, 3), j = 0:nc-1
-        @inbounds val = r[m*div(nc, 4), j]
-        if val > rmax
-            # m is a y-shift by π/4
-            rmax, mmax, smax = val, 2*m, j
+    @inbounds begin
+        for m2 = (0, 1, 2, 3), j = 0:nc-1
+            # see https://www.dsprelated.com/freebooks/sasp/
+            #            Quadratic_Interpolation_Spectral_Peaks.html
+            row = m2*div(nc, 4)
+            α = r[row, j-1]
+            β = r[row, j]
+            γ = r[row, j+1]
+            # peak location
+            p = clamp(0.5*(α-γ)/(α - 2β + γ), -0.5, 0.5)
+            # peak value
+            val = β - 0.25*(α-γ)*p
+            if val > rmax
+                # m is a y-shift by π/4
+                rmax, mmax, smax = val, 2*m2, j+p
+            end
         end
     end
-    # the maximum correlation, and the s and m shifts
-    rmax, smax, mmax
+    # the maximum correlation, and the s and m shifts in proper units
+    rmax, smax/nc*2π, mmax
 end
