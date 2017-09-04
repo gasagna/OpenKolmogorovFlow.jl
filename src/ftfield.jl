@@ -60,7 +60,7 @@ Base.unsafe_get(U::FTField) = U.data
 
 # allow constructing similar fields. Used by IMEXRKCB to allocate storage.
 # TODO. allow, different, type and shape
-Base.similar(U::FTField) = FTField(similar(U.data))
+Base.similar(U::FTField) = FTField(zeros(U.data))
 
 # get/set perturbation for variational analysis. There is no
 # need for checks of FTField have same `n`
