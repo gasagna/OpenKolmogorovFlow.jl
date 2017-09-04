@@ -120,14 +120,14 @@ function VorticityEquation(n::Int,
                            kforcing::Int=4; 
                            T::Type{<:Real}=Float64,
                            flags::UInt32=FFTW.PATIENT, 
-                           dealias::Union{Bool, Int}=true)
+                           dealias::Bool=true)
     # if dealias is an int we interpret it as the size of the
     # larger grid over which we do interpolation, and assume that
     # the user knows what he/she is doing. If it is a boolean we 
     # select the appropriate value. For optimal performance the user 
     # should select an appropriate pair of grid size, based on tests of 
     # the FFTW compiled library on his/her machine.
-    m = dealias isa Int ? dealias : (dealias == true ? even_dealias_size(n) : n)
+    m = dealias == true ? even_dealias_size(n) : n
     # compute eltype of differential operator data if we have a 
     # variational number type as input
     S = T <: VarNum ? T.parameters[1] : T
