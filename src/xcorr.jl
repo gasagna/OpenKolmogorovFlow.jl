@@ -41,16 +41,12 @@ function peakdetect(r::Field{nc}) where {nc}
             # see https://www.dsprelated.com/freebooks/sasp/
             #            Quadratic_Interpolation_Spectral_Peaks.html
             row = m2*div(nc, 4)
-            α = r[row, j-1]
-            β = r[row, j]
-            γ = r[row, j+1]
-            # peak location
-            p = clamp(0.5*(α-γ)/(α - 2β + γ), -0.5, 0.5)
-            # peak value
-            val = β - 0.25*(α-γ)*p
-            if val > rmax
+            α, β, γ  = r[row, j-1], r[row, j], r[row, j+1]
+            peakloc = clamp(0.5*(α-γ)/(α - 2β + γ), -0.5, 0.5)
+            peakval = β - 0.25*(α-γ)*peakloc
+            if peakval > rmax
                 # m is a y-shift by π/4
-                rmax, mmax, smax = val, 2*m2, j+p
+                rmax, mmax, smax = peakval, 2*m2, j+peakloc
             end
         end
     end
