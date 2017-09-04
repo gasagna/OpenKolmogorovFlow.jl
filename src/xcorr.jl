@@ -16,7 +16,7 @@ end
 function distance!(U::FTField{n}, V::FTField{n}, cache::XCorrCache{nc, T}) where {n, nc, T}
     evalconjprod!(U, V, cache)                 # evaluate product
     cache.irfft!(cache.r, cache.R)             # inverse transform
-    rp, s, m_ = locatepeak(cache.r)            # find peak
+    s, m_ = peakdetect(cache.r)                # find peak
     innerdiff(shifted(U, (s, m_)), V), (s, m_) # calculate distance
 end
 
@@ -34,7 +34,7 @@ end
 
 # Find peak of correlation function for y shifts m = 0, 1, 2, 3,
 # using a quadratic interpolation of the data points
-function locatepeak(r::Field{nc}) where {nc}
+function peakdetect(r::Field{nc}) where {nc}
     rmax, mmax, smax = r[0, 0], 0, 0
     @inbounds begin
         for m2 = (0, 1, 2, 3), j = 0:nc-1
@@ -54,6 +54,6 @@ function locatepeak(r::Field{nc}) where {nc}
             end
         end
     end
-    # the maximum correlation, and the s and m shifts in proper units
-    rmax, smax/nc*2π, mmax
+    # return the `s` and `m` shifts in proper units
+    smax/nc*2π, mmax
 end
