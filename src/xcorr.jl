@@ -38,7 +38,8 @@ function locatepeak(r::Field{nc}) where {nc}
     for m = (0, 1, 2, 3), j = 0:nc-1
         @inbounds val = r[m*div(nc, 4), j]
         if val > rmax
-            rmax, mmax, smax = val, m, j
+            # m is a y-shift by π/4
+            rmax, mmax, smax = val, 2*m, j
         end
     end
     # the maximum correlation, and the s and m shifts
