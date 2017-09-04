@@ -109,12 +109,10 @@ function shrinkto!(W::FTField{n}, U::FTField{m}) where {n, m}
         for j = 0:dW, k = (-dW+1):dW
             W[k, j] = U[k, j]
         end
-        # attempt to preserve the energy, but we dot preserve 
-        # the conjugate symmetry, because shrinkto! is a lossy 
-        # operation, so we don't bother :)
-        W[dW,  0] = 2*abs(U[dW, 0])
-        W[0,  dW] = 2*abs(U[0, dW])
-        W[dW, dW] =   sqrt(abs(U[dW, dW])^2 + abs(U[-dW, dW])^2)
+        # halve energy of the last modes
+        for k = (-dW+1):dW
+            W[k, dW] *= 0.5
+        end
     end
     W
 end
