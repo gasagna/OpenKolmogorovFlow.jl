@@ -14,10 +14,10 @@ struct XCorrCache{m, T, rT<:Field{m, T}, RT<:FTField{m, Complex{T}}, IP}
 end
 
 function distance!(U::FTField{n}, V::FTField{n}, cache::XCorrCache{nc, T}) where {n, nc, T}
-    evalconjprod!(U, V, cache)              # evaluate product
-    cache.irfft!(cache.r, cache.R)          # inverse transform
-    rp, s, m_ = locatepeak(cache.r)         # find peak
-    norm(U)^2 + norm(V)^2 - 8*rp*π^2, (s/nc*2π, m_) # recover shift in dimensional terms
+    evalconjprod!(U, V, cache)                 # evaluate product
+    cache.irfft!(cache.r, cache.R)             # inverse transform
+    rp, s, m_ = locatepeak(cache.r)            # find peak
+    innerdiff(shifted(U, (s, m_)), V), (s, m_) # calculate distance
 end
 
 # Same size, use broadcasting
