@@ -15,5 +15,6 @@ include("system.jl")
 include("flow.jl")
 include("spectra.jl")
 include("shifts.jl")
+include("xcorr.jl")
 
 end
