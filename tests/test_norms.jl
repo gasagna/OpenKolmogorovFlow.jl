@@ -62,7 +62,7 @@ end
     n = 100
     u = randn(n, n); U = FFT(Field(u))
     v = randn(n, n); V = FFT(Field(v))
-    @test minimum([@elapsed inner(U, V) for i = 1:100000]) < 4*10.0^(-6)
+    @test minimum([@elapsed inner(U, V) for i = 1:100000]) < 4.1*10.0^(-6)
 end
 
 @testset "norm                                   " begin
