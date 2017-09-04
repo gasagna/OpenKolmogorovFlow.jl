@@ -14,32 +14,33 @@ struct XCorrCache{m, T, rT<:Field{m, T}, RT<:FTField{m, Complex{T}}, IP}
 end
 
 function distance!(U::FTField{n}, V::FTField{n}, cache::XCorrCache{nc, T}) where {n, nc, T}
-    evalconjprod!(cache, U, V)              # evaluate product
+    evalconjprod!(U, V, cache)              # evaluate product
     cache.irfft!(cache.r, cache.R)          # inverse transform
     rp, s, m_ = locatepeak(cache.r)         # find peak
-    norm(U) + norm(V) - 2*rp, (s/nc*2π, m_) # recover shift in dimensional terms
+    norm(U)^2 + norm(V)^2 - 8*rp*π^2, (s/nc*2π, m_) # recover shift in dimensional terms
 end
 
 # Same size, use broadcasting
-evalconjprod!(cache::XCorrCache{n}, U::FTField{n}, V::FTField{n}) where {n} =
+evalconjprod!(U::FTField{n}, V::FTField{n}, cache::XCorrCache{n}) where {n} =
     (cache.R .= conj.(U).*V; nothing)
 
 # Different size, use indexing
-function evalconjprod!(cache::XCorrCache{nc}, U::FTField{n}, V::FTField{n}) where {nc, n}
+function evalconjprod!(U::FTField{n}, V::FTField{n}, cache::XCorrCache{nc}) where {nc, n}
     d = nc>>1
     for j = 0:d, k = -d+1:d
-        @inbounds cache.R[j, k] = conj(U[j, k])*V[j, k]
+        @inbounds cache.R[k, j] = conj(U[k, j])*V[k, j]
     end
 end
 
 # Find peak of correlation function for y shifts m = 0, 1, 2, 3
 function locatepeak(r::Field{nc}) where {nc}
-    rmax, imax, jmax = r[0, 0], 0, 0
-    for i = (0, 1, 2, 3), j = 0:nc-1
-        @inbounds v = r[i*div(nc, 4), j]
-        if v > rmax
-            rmax, imax, jmax = v, i, j
+    rmax, mmax, smax = r[0, 0], 0, 0
+    for m = (0, 1, 2, 3), j = 0:nc-1
+        @inbounds val = r[m*div(nc, 4), j]
+        if val > rmax
+            rmax, mmax, smax = val, m, j
         end
     end
-    rmax, jmax, imax
+    # the maximum correlation, and the s and m shifts
+    rmax, smax, mmax
 end
