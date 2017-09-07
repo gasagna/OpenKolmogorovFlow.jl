@@ -13,9 +13,9 @@ end
                1  5  9 13
                2  6 10 14
                3  7 11 15])
-    # lower left corner of domain, at 
+    # lower left corner of domain, at
     # (x, y) = (0, 0)
-    @test u[ 0,  0] ==  0 
+    @test u[ 0,  0] ==  0
     @test u[ 2,  1] ==  6
     @test u[-1,  0] ==  3
     @test u[ 0, -1] == 12

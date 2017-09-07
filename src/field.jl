@@ -8,7 +8,7 @@ struct Field{n, T<:Real, M<:AbstractMatrix{T}} <: AbstractMatrix{T}
     end
 end
 
-Field(data::AbstractMatrix) = 
+Field(data::AbstractMatrix) =
     Field{size(data, 1), eltype(data), typeof(data)}(data)
 Field(n::Int, ::Type{T}=Float64) where {T} = Field(zeros(T, n, n))
 

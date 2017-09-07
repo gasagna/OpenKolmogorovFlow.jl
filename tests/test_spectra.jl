@@ -12,10 +12,10 @@ using OpenKolmogorovFlow
     # mean of abs
     out = radial_mean(abs, Ω)
 
-    @test out[1] == mean(abs, [Ω[1, 1], Ω[1, -1], Ω[-1, 1], Ω[-1, -1], 
+    @test out[1] == mean(abs, [Ω[1, 1], Ω[1, -1], Ω[-1, 1], Ω[-1, -1],
                                Ω[1, 0], Ω[0,  1], Ω[0, -1], Ω[-1,  0]])
 
-    @test out[2] == mean(abs, [Ω[-1,  2], Ω[ 0,  2], Ω[ 1,  2],  # top 
+    @test out[2] == mean(abs, [Ω[-1,  2], Ω[ 0,  2], Ω[ 1,  2],  # top
                                Ω[-1, -2], Ω[ 0, -2], Ω[ 1, -2],  # bottom
                                Ω[-2,  1], Ω[-2,  0], Ω[-2,  1],  # left
                                Ω[ 2,  1], Ω[ 2,  0], Ω[-2, -1]]) # right

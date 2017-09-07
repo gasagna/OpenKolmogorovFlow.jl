@@ -23,27 +23,27 @@ end
     distance!(Ω₁, Ω₂, cache)
 
 Calculate the minimum distance (L2 norm) between vorticity fields `Ω₁` and `Ω₂`,
-among all possible continuous shift `s ∈ [0, 2π)` along the `x` direction and 
+among all possible continuous shift `s ∈ [0, 2π)` along the `x` direction and
 for discrete vertical shifts `m*π/4, m ∈ {0, 2, 4, 6}`. It returns the minimum
 distance `d` and the shifts `s` and `m`, such that
 
 julia> innerdiff(shift!(Ω₁, (s, m)), Ω₂) ≈ d
 
-where the equality holds approximately because different algorithms are used. 
-This function exploits the correlation theorem to compute the optimal shift 
-more efficiently. 
+where the equality holds approximately because different algorithms are used.
+This function exploits the correlation theorem to compute the optimal shift
+more efficiently.
 
-We currently use the algorithm that is fastest and allocates less memory, but 
+We currently use the algorithm that is fastest and allocates less memory, but
 can be significantly less precise to to cancellation errors. This is not a big
 issue, because the main purpose of this function is to detect near recurrences
-and we do not care if the distance is not calculated to 16 decimal digits, but 
+and we do not care if the distance is not calculated to 16 decimal digits, but
 only, say, 11.
 
 The object `cache` is created as
 
 julia> cache = DistanceCache(nc)
 
-where `nc` is the size of the grid where the correlation function is evaluated 
+where `nc` is the size of the grid where the correlation function is evaluated
 on. This can be the same size as the fields `Ω₁` and `Ω₂` above, or lower, for
 faster, but maybe less accurate calculations. The number `nc/4` must be even.
 """
@@ -56,7 +56,7 @@ function distance!(Ω₁::FTField{n}, Ω₂::FTField{n}, cache::DistanceCache{nc
 end
 
 
-# ~~~~ Below is the private interface, mainly helper functions ~~~ 
+# ~~~~ Below is the private interface, mainly helper functions ~~~
 
 # Same size, use broadcasting
 _evalconjprod!(Ω₁::FTField{n}, Ω₂::FTField{n}, cache::DistanceCache{n}) where {n} =
@@ -80,7 +80,7 @@ function _evalconjprod!(Ω₁::FTField{n}, Ω₂::FTField{n}, cache::DistanceCac
 end
 
 # Copy value of correlation function at `Δy = m_opt*π/4` into a temporary
-# buffer and compute its Fourier transform, so that we can use it for 
+# buffer and compute its Fourier transform, so that we can use it for
 # interpolation and for finding the correlation peak.
 function _fillline!(cache::DistanceCache{nc}, m_opt::Int) where {nc}
     I = div(m_opt, 2)*div(nc, 4)
@@ -136,7 +136,7 @@ function _perinterp(R::Vector{Complex{T}}, x::Real) where {T}
 end
 
 # Use Newton method to find an extremum of the periodic function defined
-# by the Fourier Series `R` near `x`. We assume that this is going to 
+# by the Fourier Series `R` near `x`. We assume that this is going to
 # converge in less than 10 iteration, otherwise we raise an error.
 function _peroptim(R::Vector{<:Complex}, x::Real, stol::Real=1e-12)
     for i = 1:10 # this must end

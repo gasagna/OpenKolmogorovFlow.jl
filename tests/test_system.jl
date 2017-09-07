@@ -2,7 +2,7 @@ using OpenKolmogorovFlow
 using IMEXRKCB
 using Base.Test
 
-# Test that solution converges to the 
+# Test that solution converges to the
 # laminar flow for small Reynolds numbers
 @testset "laminar flow                           " begin
     # example dimension
@@ -14,7 +14,7 @@ using Base.Test
 
     # initial condition
     Ω₀ = FTField(n)
-    
+
     for dealias in [true, false]
         # get explicit and implicit parts
         L, N = imex(VorticityEquation(n, Re, kforcing; dealias=dealias))
@@ -23,7 +23,7 @@ using Base.Test
         for impl in [IMEXRK3R2R(IMEXRKCB3c, false),
                      IMEXRK3R2R(IMEXRKCB3e, false),
                      IMEXRK4R3R(IMEXRKCB4,  false)]
-        
+
             # define integrator
             f = integrator(N, L, IMEXRKScheme(impl, Ω₀), 0.005)
 
@@ -32,10 +32,10 @@ using Base.Test
 
             # monitor the state excited by forcing
             m = Monitor((Ω->Ω, ), Ω₀)
-        
-            # map forward 
+
+            # map forward
             f(Ω₀, 50,  m)
-            
+
             # test final value is that predicted by explicit equation
             Δ = m.samples[1][end] .- laminarflow(n, Re, kforcing)
             @test maximum(abs, Δ) < 1e-15

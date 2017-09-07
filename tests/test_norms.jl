@@ -6,7 +6,7 @@ using Base.Test
 
     # tolerance on integrals
     TOL = 1e-14
-    
+
     # init rng
     srand(0)
 
@@ -70,8 +70,8 @@ end
 
     # tolerance on integrals
     TOL = 1e-14
- 
-    for (val, u) in [(sqrt(2)*π, sin.(1.*x.+1.*y)), 
+
+    for (val, u) in [(sqrt(2)*π, sin.(1.*x.+1.*y)),
                      (2*π,       cos.(1.*x.+2.*y) .+ sin.(1.*x.+2.*y)),
                      (2*π,       cos.(0.*x.+5.*y) .+ sin.(1.*x.+5.*y)),
                      (sqrt(2)*π, cos.(0.*x.+5.*y) .+ sin.(0.*x.+5.*y))]
@@ -86,7 +86,7 @@ end
 
     # tolerance on integrals
     TOL = 1e-14
- 
+
     u = sin.(1.*x.+1.*y); U = FFT(Field(u))
     v = sin.(1.*x.+1.*y); V = FFT(Field(v))
     @test innerdiff(U, V) == 0

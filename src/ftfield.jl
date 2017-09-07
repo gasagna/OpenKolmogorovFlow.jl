@@ -64,12 +64,12 @@ Base.similar(U::FTField) = FTField(zeros(U.data))
 
 # get/set perturbation for variational analysis. There is no
 # need for checks of FTField have same `n`
-VariationalNumbers.set_pert!(A::FTField{n, Complex{VarNum{T}}}, 
-                             p::FTField{n, Complex{T}}) where {n, T} = 
+VariationalNumbers.set_pert!(A::FTField{n, Complex{VarNum{T}}},
+                             p::FTField{n, Complex{T}}) where {n, T} =
     (unsafe_set_pert!(A.data, p.data))
 
-VariationalNumbers.get_pert!(A::FTField{n, Complex{VarNum{T}}}, 
-                             p::FTField{n, Complex{T}}) where {n, T} = 
+VariationalNumbers.get_pert!(A::FTField{n, Complex{VarNum{T}}},
+                             p::FTField{n, Complex{T}}) where {n, T} =
     (unsafe_get_pert!(A.data, p.data))
 
 # ~~~ Copy one field to the other, e.g. for zero padding or truncation ~~~

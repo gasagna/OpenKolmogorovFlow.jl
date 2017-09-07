@@ -17,7 +17,7 @@ using Base.Test
     Ωa = FFT(Field(cos.(x.+y)))
     Ωb = FFT(Field(sin.(x.+y)))
     @test dissrate(Ωa, 1.0) == dissrate(Ωb, 1.0)
-   
+
     # for any wave dissipation is 1/2/Re
     d = n>>1 + 1
     for j = -d+1:d, k=-d+1:d
@@ -28,9 +28,9 @@ using Base.Test
         end
     end
 
-    # test no allocations 
+    # test no allocations
     @test (@allocated dissrate(Ω, 1.0)) == 16
-    
+
     # warm up with int
     dissrate(Ω, 1)
     @test (@allocated dissrate(Ω, 1)) == 16

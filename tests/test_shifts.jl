@@ -19,7 +19,7 @@ end
     data = sin.(x .+ 0.*y)
     Usin = FFT(Field(data))
 
-    s, m = π/2, 0 
+    s, m = π/2, 0
     @test abs(innerdiff(Usin, shifted(Ucos, (s, m)))) < 1e-20
 end
 

@@ -15,7 +15,7 @@ end
         U = FFT(Field(randn(n, n)))
         d = n>>1
         for k = (-d+1):d, j = (-d+1):d
-            # it is not exactly zero, because of FFTW does 
+            # it is not exactly zero, because of FFTW does
             # not ensure exact conjugate symmetry
             @test abs(U[j, k] - conj(U[-j, -k])) < 1e-16
         end
@@ -48,7 +48,7 @@ end
     @test u[ 2,  0] ==  5+0im
     @test u[-2,  0] ==  5+0im
     @test u[-1,  0] ==  3-4im
-    
+
     @test u[ 0,  1] ==  9+10im
     @test u[ 1,  1] == 11+12im
     @test u[ 2,  1] == 13+14im
@@ -87,7 +87,7 @@ end
     end
 end
 
-# this is meant to be a documentation of the properties of the FFT 
+# this is meant to be a documentation of the properties of the FFT
 # for a transform of 2D data over a grid with even number of points.
 @testset "transform                              " begin
     n = 4
@@ -179,12 +179,12 @@ end
                                 4-1im 7+3im 2+3im 22+2im
                                 6+0im 5+8im 6-3im 12+0im
                                 4+1im 1+3im 4+0im 22-2im
-                                3-4im 5-3im 4-4im 19-20im]       
+                                3-4im 5-3im 4-4im 19-20im]
 
-        # define field                                
-        v = FTField(data)                                
+        # define field
+        v = FTField(data)
 
-        # same size                                 
+        # same size
         w = FTField(6)
         shrinkto!(w, v)
         @test w.data == Complex{Float64}[1+0im 5-7im 5+4im 16+0im
@@ -192,9 +192,9 @@ end
                                          4-1im 7+3im 2+3im 22+2im
                                          6+0im 5+8im 6-3im 12+0im
                                          4+1im 1+3im 4+0im 22-2im
-                                         3-4im 5-3im 4-4im 19-20im]                                  
+                                         3-4im 5-3im 4-4im 19-20im]
 
-        # smaller                                         
+        # smaller
         w = FTField(4)
         shrinkto!(w, v)
         @test w.data == Complex{Float64}[1+0*im 5-7im 10+0*im
@@ -202,7 +202,7 @@ end
                                          8+0*im 7+3im  4+0*im
                                          3-4*im 5-3im  4+3*im]
 
-        # smaller                         
+        # smaller
         w = FTField(2)
         shrinkto!(w, v)
         @test w.data == Complex{Float64}[1+0*im 10+0*im

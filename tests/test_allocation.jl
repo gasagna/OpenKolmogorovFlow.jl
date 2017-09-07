@@ -14,7 +14,7 @@ using BenchmarkTools
 
     # initial condition
     Ω₀ = FTField(n)
-    
+
     # get explicit and implicit parts
     L, N = imex(VorticityEquation(n, Re, kforcing; dealias=false))
 
