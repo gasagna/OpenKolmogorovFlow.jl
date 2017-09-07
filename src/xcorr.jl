@@ -79,6 +79,9 @@ function _evalconjprod!(Ω₁::FTField{n}, Ω₂::FTField{n}, cache::DistanceCac
     end
 end
 
+# Copy value of correlation function at `Δy = m_opt*π/4` into a temporary
+# buffer and compute its Fourier transform, so that we can use it for 
+# interpolation and for finding the correlation peak.
 function _fillline!(cache::DistanceCache{nc}, m_opt::Int) where {nc}
     I = div(m_opt, 2)*div(nc, 4)
     @inbounds @simd for j = 0:nc-1 # copy line
