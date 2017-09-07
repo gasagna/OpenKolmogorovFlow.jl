@@ -1,40 +1,73 @@
 export DistanceCache, distance!
 
+# Storage type to assist the computation of distance between two vorticity field
 struct DistanceCache{m, T, S<:Field{m, T}, D<:FTField{m, Complex{T}}}
             r::S                    # the cross correlation field
-       r_line::Vector{T}            #
+       r_line::Vector{T}            # cross correlation along Δy = m*π/4
             R::D                    # the cross correlation transform
-       R_line::Vector{Complex{T}}   #
-         plan                       # inverse Fourier transform object
-    plan_line                       # 1d plan
+       R_line::Vector{Complex{T}}   # Fourier series or r_line
+         plan                       # 2d plan for FFT
+    plan_line                       # 1d plan for FFT
     function DistanceCache(m::Int, ::Type{T}=Float64, flags::UInt32=FFTW.PATIENT) where {T}
         # we want to index exact location for vertical integer shifts
         rem(m, 4) == 0 || error("cache size / 4 must be an even number")
         r, R = Field(m, T), FTField(m, Complex{T})
         r_line, R_line = zeros(T, m), zeros(Complex{T}, m)
-             plan = plan_brfft(R.data,  m, [2, 1], flags=flags)
-        plan_line = plan_rfft(r_line,              flags=flags)
+             plan = plan_brfft(R.data,  m, [2, 1], flags=flags) # inverse transform
+        plan_line = plan_rfft(r_line,              flags=flags) # forward transform
         new{m, T, typeof(r), typeof(R)}(r, r_line, R, R_line, plan, plan_line)
     end
 end
 
-function distance!(U::FTField{n}, V::FTField{n}, cache::DistanceCache{nc, T}) where {n, nc, T}
-    _evalconjprod!(U, V, cache)                             # evaluate product
-    unsafe_execute!(cache.plan, cache.R.data, cache.r.data) # inverse transform
-    s_opt, m_opt, r_opt = _peakdetect(cache)                # find peak
-    return norm(U)^2 + norm(V)^2 - 8*π^2*r_opt, (s_opt, m_opt)
+"""
+    distance!(Ω₁, Ω₂, cache)
+
+Calculate the minimum distance (L2 norm) between vorticity fields `Ω₁` and `Ω₂`,
+among all possible continuous shift `s ∈ [0, 2π)` along the `x` direction and 
+for discrete vertical shifts `m*π/4, m ∈ {0, 2, 4, 6}`. It returns the minimum
+distance `d` and the shifts `s` and `m`, such that
+
+julia> innerdiff(shift!(Ω₁, (s, m)), Ω₂) ≈ d
+
+where the equality holds approximately because different algorithms are used. 
+This function exploits the correlation theorem to compute the optimal shift 
+more efficiently. 
+
+We currently use the algorithm that is fastest and allocates less memory, but 
+can be significantly less precise to to cancellation errors. This is not a big
+issue, because the main purpose of this function is to detect near recurrences
+and we do not care if the distance is not calculated to 16 decimal digits, but 
+only, say, 11.
+
+The object `cache` is created as
+
+julia> cache = DistanceCache(nc)
+
+where `nc` is the size of the grid where the correlation function is evaluated 
+on. This can be the same size as the fields `Ω₁` and `Ω₂` above, or lower, for
+faster, but maybe less accurate calculations. The number `nc/4` must be even.
+"""
+function distance!(Ω₁::FTField{n}, Ω₂::FTField{n}, cache::DistanceCache{nc, T}) where {n, nc, T}
+    nc ≤ n || throw(ArgumentError("cache size must be lower or equal that field size"))
+    _evalconjprod!(Ω₁, Ω₂, cache)                                # evaluate product
+    unsafe_execute!(cache.plan, cache.R.data, cache.r.data)      # inverse transform
+    s_opt, m_opt, r_opt = _peakdetect(cache)                     # find peak
+    return norm(Ω₁)^2 + norm(Ω₂)^2 - 8*π^2*r_opt, (s_opt, m_opt) # apply definition
 end
 
+
+# ~~~~ Below is the private interface, mainly helper functions ~~~ 
+
 # Same size, use broadcasting
-_evalconjprod!(U::FTField{n}, V::FTField{n}, cache::DistanceCache{n}) where {n} =
-    (cache.R .= conj.(U).*V; nothing)
+_evalconjprod!(Ω₁::FTField{n}, Ω₂::FTField{n}, cache::DistanceCache{n}) where {n} =
+    (cache.R .= conj.(Ω₁).*Ω₂; nothing)
 
 # Different size, use indexing
-function _evalconjprod!(U::FTField{n}, V::FTField{n}, cache::DistanceCache{nc}) where {nc, n}
+function _evalconjprod!(Ω₁::FTField{n}, Ω₂::FTField{n}, cache::DistanceCache{nc}) where {nc, n}
     d = nc>>1
     @inbounds begin
         for j = 0:d, k = -d+1:d
-            cache.R[k, j] = conj(U[k, j])*V[k, j]
+            cache.R[k, j] = conj(Ω₁[k, j])*Ω₂[k, j]
         end
         # satisfy symmetries
         for k = 0:d
