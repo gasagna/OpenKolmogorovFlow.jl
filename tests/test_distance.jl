@@ -137,9 +137,9 @@ end
 
         # calculate distance
         d, (s_opt, m_opt) = distance!(Ω, Ωs, cache)
-        @test abs(d) < 1e-7                  # the distance suffers cancellation
-        @test abs(s_opt - Δ[1] % 2π) < 1e-9  # this reaches machine accuracy
-        @test m_opt == 2*m % 8               # of course exact
+        @test abs(d) < 1e-7                   # the distance suffers cancellation
+        @test abs(s_opt - Δ[1] % 2π) < 4e-10  # this reaches machine accuracy
+        @test m_opt == 2*m % 8                # of course exact
     end
 
     # proceed in time ahead
