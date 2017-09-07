@@ -141,4 +141,11 @@ end
         @test abs(s_opt - Δ[1] % 2π) < 1e-11 # this reaches machine accuracy
         @test m_opt == 2*m % 8               # of course exact
     end
+
+    # proceed in time ahead
+    Ω2 = f(deepcopy(Ω), 5.0)
+
+    # find shift and see if distance matches with the calculation using innerdiff
+    d, (s, m) = distance!(Ω, Ω2, cache)
+    @test abs(d - innerdiff(shifted(Ω, (s, m)), Ω2)) < 1e-10
 end
