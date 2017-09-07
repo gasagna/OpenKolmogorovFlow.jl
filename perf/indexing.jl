@@ -13,13 +13,13 @@ function baz(dest::FTField{n}, src::FTField{n}) where n
     dest
 end
 
-# function bar(dest, src)
-#     @simd for i in linearindices(dest)
-#         @inbounds dest[i] = src[i]
-#     end
-#     dest
-# end
+function bar(dest, src)
+    @simd for i in linearindices(dest)
+        @inbounds dest[i] = src[i]
+    end
+    dest
+end
 
-# @btime bar($U, $V)
 @btime baz($U, $V)
-# @btime bar($U.data, $V.data)
+@btime bar($U, $V)
+@btime bar($U.data, $V.data)
