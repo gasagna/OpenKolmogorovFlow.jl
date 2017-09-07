@@ -122,7 +122,7 @@ end
 
         # calculate distance
         d, (s_opt, m_opt) = distance!(Ω, Ωs, cache)
-        @test abs(d) < 3e-11                  # the distance suffers cancellation
+        @test abs(d) < 4e-10                  # the distance suffers cancellation
         @test abs(s_opt - Δ[1] % 2π) < 1e-15  # this reaches machine accuracy
         @test m_opt == 2*m % 8                # of course exact
     end
@@ -137,8 +137,8 @@ end
 
         # calculate distance
         d, (s_opt, m_opt) = distance!(Ω, Ωs, cache)
-        @test abs(d) < 1e-8                  # the distance suffers cancellation
-        @test abs(s_opt - Δ[1] % 2π) < 1e-11 # this reaches machine accuracy
+        @test abs(d) < 1e-7                  # the distance suffers cancellation
+        @test abs(s_opt - Δ[1] % 2π) < 1e-9  # this reaches machine accuracy
         @test m_opt == 2*m % 8               # of course exact
     end
 
@@ -147,5 +147,5 @@ end
 
     # find shift and see if distance matches with the calculation using innerdiff
     d, (s, m) = distance!(Ω, Ω2, cache)
-    @test abs(d - innerdiff(shifted(Ω, (s, m)), Ω2)) < 1e-10
+    @test abs(d - innerdiff(shifted(Ω, (s, m)), Ω2)) < 4e-9
 end
