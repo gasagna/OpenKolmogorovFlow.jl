@@ -34,10 +34,16 @@ end
         U, V = FFT(u), FFT(u)   # else we get sampling artefacts
         # same cache size
         cache = DistanceCache(n)
-        @test distance!(U, V, cache) == (0.0, (0.0, 0))
+        d, (s_opt, m_opt) = distance!(U, V, cache)
+        @test abs(d) < 5e-12
+        @test s_opt ≈ 0.0
+        @test m_opt == 0
         # reduced cache size
         cache = DistanceCache(48)
-        @test distance!(U, V, cache) == (0.0, (0.0, 0))
+        d, (s_opt, m_opt) = distance!(U, V, cache)
+        @test abs(d) < 5e-12
+        @test s_opt ≈ 0.0
+        @test m_opt == 0
     end
     @testset "known shift 1                      " begin
         n = 64
@@ -47,10 +53,16 @@ end
         U, V = FFT(u), FFT(v)
         # same cache size
         cache = DistanceCache(n)
-        @test distance!(U, V, cache) == (0.0, (π/2, 0))
+        d, (s_opt, m_opt) = distance!(U, V, cache)
+        @test abs(d) < 5e-12
+        @test s_opt ≈ π/2
+        @test m_opt == 0
         # reduced cache size
         cache = DistanceCache(48)
-        @test distance!(U, V, cache) == (0.0, (π/2, 0))
+        d, (s_opt, m_opt) = distance!(U, V, cache)
+        @test abs(d) < 5e-12
+        @test s_opt ≈ π/2
+        @test m_opt == 0
     end
     @testset "known shift 2                      " begin
         n, d = 64, 10
