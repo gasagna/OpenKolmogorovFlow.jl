@@ -51,7 +51,7 @@ function distance!(Ω₁::FTField{n}, Ω₂::FTField{n}, cache::DistanceCache{nc
     nc ≤ n || throw(ArgumentError("cache size must be lower or equal that field size"))
     _evalconjprod!(Ω₁, Ω₂, cache)                                # evaluate product
     unsafe_execute!(cache.plan, cache.R.data, cache.r.data)      # inverse transform
-    s_opt, m_opt, r_opt = _peakdetect(cache)                     # find peak
+    s_opt, m_opt, r_opt = _peakdetect(cache)               # find peak
     return norm(Ω₁)^2 + norm(Ω₂)^2 - 8*π^2*r_opt, (s_opt, m_opt) # apply definition
 end
 
@@ -135,12 +135,12 @@ end
 # Use Newton method to find an extremum of the periodic function defined
 # by the Fourier Series `R` near `x`. We assume that this is going to 
 # converge in less than 10 iteration, otherwise we raise an error.
-function _peroptim(R::Vector{<:Complex}, x::Real, tol::Real=1e-12)
+function _peroptim(R::Vector{<:Complex}, x::Real, stol::Real=1e-12)
     for i = 1:10 # this must end
         val, grad, hess = _perinterp(R, x)
         Δ = grad/hess
-        abs(Δ) < tol && return (x, val)
         x = x - Δ
+        abs(Δ) < stol && return (x, _perinterp(R, x)[1])
     end
     throw(error("iterations did not converge"))
 end

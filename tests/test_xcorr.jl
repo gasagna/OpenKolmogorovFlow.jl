@@ -35,14 +35,14 @@ end
         # same cache size
         cache = DistanceCache(n)
         d, (s_opt, m_opt) = distance!(U, V, cache)
-        @test abs(d) < 5e-12
-        @test s_opt ≈ 0.0
+        @test abs(d)     < 5e-12
+        @test abs(s_opt) < 5e-15
         @test m_opt == 0
         # reduced cache size
         cache = DistanceCache(48)
         d, (s_opt, m_opt) = distance!(U, V, cache)
-        @test abs(d) < 5e-12
-        @test s_opt ≈ 0.0
+        @test abs(d)     < 5e-12
+        @test abs(s_opt) < 5e-15
         @test m_opt == 0
     end
     @testset "known shift 1                      " begin
@@ -123,7 +123,7 @@ end
         # calculate distance
         d, (s_opt, m_opt) = distance!(Ω, Ωs, cache)
         @test abs(d) < 3e-11                  # the distance suffers cancellation
-        @test abs(s_opt - Δ[1] % 2π) < 5e-16 # this reaches machine accuracy
+        @test abs(s_opt - Δ[1] % 2π) < 1e-15  # this reaches machine accuracy
         @test m_opt == 2*m % 8                # of course exact
     end
 
