@@ -39,7 +39,7 @@ end
         cache = DistanceCache(48)
         @test distance!(U, V, cache) == (0.0, (0.0, 0))
     end
-    @testset "known shift                        " begin
+    @testset "known shift 1                      " begin
         n = 64
         x, y = make_grid(n)
         u = Field(cos.(x .+ 0.*y)) # peak must be at grid point,
@@ -51,6 +51,24 @@ end
         # reduced cache size
         cache = DistanceCache(48)
         @test distance!(U, V, cache) == (0.0, (π/2, 0))
+    end
+    @testset "known shift 2                      " begin
+        n = 64
+        x, y = make_grid(n)
+        u = Field(cos.(x .+ 3.*y) .+ sin.(1.*x .+ 3.*y) .+ sin.(2.*x .+ 3.*y)) # peak must be at grid point,
+        U = FFT(u)
+        
+        # same cache size
+        cache = DistanceCache(n)
+
+        # test we recover all possible y shifts
+        for (s, m) in [(1.0, 0), (1.1, 2), (3, 4), (4.1, 6)]
+            V = shift!(deepcopy(U), (s, m))
+            d, (s_opt, m_opt) = distance!(U, V, cache) 
+            @test abs(d) < 1e-13
+            @test s_opt ≈ s
+            @test m_opt == m
+        end
     end
 end
 
