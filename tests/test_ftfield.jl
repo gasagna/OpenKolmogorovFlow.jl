@@ -175,8 +175,8 @@ end
     end
     @testset "shrinkto!                          " begin
         data = Complex{Float64}[1+0im 5-7im 5+4im 16+0im
-                                3+4im 3+3im 4-3im 19+20im
-                                4-1im 7+3im 0+3im 22+2im
+                                3+4im 3+3im 4-2im 19+20im
+                                4-1im 7+3im 2+3im 22+2im
                                 6+0im 5+8im 6-3im 12+0im
                                 4+1im 1+3im 4+0im 22-2im
                                 3-4im 5-3im 4-4im 19-20im]       
@@ -188,8 +188,8 @@ end
         w = FTField(6)
         shrinkto!(w, v)
         @test w.data == Complex{Float64}[1+0im 5-7im 5+4im 16+0im
-                                         3+4im 3+3im 4-3im 19+20im
-                                         4-1im 7+3im 0+3im 22+2im
+                                         3+4im 3+3im 4-2im 19+20im
+                                         4-1im 7+3im 2+3im 22+2im
                                          6+0im 5+8im 6-3im 12+0im
                                          4+1im 1+3im 4+0im 22-2im
                                          3-4im 5-3im 4-4im 19-20im]                                  
@@ -197,17 +197,16 @@ end
         # smaller                                         
         w = FTField(4)
         shrinkto!(w, v)
-        expected = Complex{Float64}[1+0im          5-7im  2sqrt(5^2+4^2)
-                                    3+4im          3+3im  4-3im 
-                                    2sqrt(4^2+1^2) 7+3im  sqrt(3^2+4^2)
-                                    3-4im          5-3im  4-4im]
-        @test sum(abs, w.data - expected) < 1e-16
+        @test w.data == Complex{Float64}[1+0*im 5-7im 10+0*im
+                                         3+4*im 3+3im  4-3*im
+                                         8+0*im 7+3im  4+0*im
+                                         3-4*im 5-3im  4+3*im]
 
         # smaller                         
         w = FTField(2)
         shrinkto!(w, v)
-        @test w.data == Complex{Float64}[1+0im          2sqrt(5^2+7^2)
-                                         2sqrt(3^2+4^2) sqrt(3^2+3^2+5^2+3^2)]
+        @test w.data == Complex{Float64}[1+0*im 10+0*im
+                                         6+0*im  6+0*im]
     end
 end
 
