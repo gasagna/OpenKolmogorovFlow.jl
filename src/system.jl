@@ -43,19 +43,19 @@ struct ExplicitTerm{n, m, T<:Real, S<:Real, IT<:InverseFFT!, FT<:ForwardFFT!}
         iseven(n) || throw(ArgumentError("`n` must be even, got $n"))
         iseven(m) || throw(ArgumentError("`m` must be even, got $m"))
         m ≥ n     || throw(ArgumentError("`m` must be bigger than `n`, got `n, m= $n, $m`. Are you sure?"))
-        
+
         # complex fields have size n
         a, b, c, d = FTField.((n, n, n, n), Complex{T})
 
         # real fields (might) have (larger) size m
         f, g, h, i = Field.((m, m, m, m), T)
-        
+
         # transforms
         ifft! = InverseFFT!(Field{m, T}, a,  flags)
          fft! = ForwardFFT!(FTField{n, Complex{T}}, f,  flags)
 
-        new{n, m, T, S, typeof(ifft!), typeof(fft!)}(ifft!, fft!, kforcing, 
-            a, b, c, d, 
+        new{n, m, T, S, typeof(ifft!), typeof(fft!)}(ifft!, fft!, kforcing,
+            a, b, c, d,
             DiffOperator(n, :x, S),  DiffOperator(n, :y, S), DiffOperator(n, :xxyy, S),
             f, g, h, i)
     end
@@ -66,7 +66,6 @@ ExplicitTerm(n::Int, m::Int, kforcing::Int, ::Type{T}, ::Type{S}, flags::UInt32)
      ExplicitTerm{n, m, T, S}(kforcing, flags)
 
 function (Eq::ExplicitTerm{n})(t::Real, Ω::FTField{n}, Ω̇::FTField{n}, add::Bool=false) where {n}
-    # ~~~ PRELIMINARIES ~~~
     # set mean to zero
     Ω[0, 0] = zero(eltype(Ω))
 
@@ -77,7 +76,7 @@ function (Eq::ExplicitTerm{n})(t::Real, Ω::FTField{n}, Ω̇::FTField{n}, add::B
     # obtain velocity components. Set mean to zero.
     Eq.U .= .- (Eq.dx²dy²) .\ Eq.∂Ω∂y; Eq.U[0, 0] = zero(eltype(Eq.U))
     Eq.V .=    (Eq.dx²dy²) .\ Eq.∂Ω∂x; Eq.V[0, 0] = zero(eltype(Eq.V))
-    # ~~~ NONLINEAR TERM ~~
+
     # inverse transform to physical space into temporaries
     Eq.ifft!(Eq.u,    Eq.U)
     Eq.ifft!(Eq.v,    Eq.V)
@@ -90,13 +89,14 @@ function (Eq::ExplicitTerm{n})(t::Real, Ω::FTField{n}, Ω̇::FTField{n}, add::B
     # forward transform to Fourier space into destination
     if add == true
         Eq.ftt!(Eq.U, Eq.u); Ω̇ .+= Eq.U
-    else 
+    else
         Eq.ftt!(Ω̇,    Eq.u)
     end
 
     # ~~~ FORCING TERM ~~~
     Ω̇[ Eq.kforcing, 0] -= Eq.kforcing/2
     Ω̇[-Eq.kforcing, 0] -= Eq.kforcing/2
+
     return nothing
 end
 
@@ -106,7 +106,7 @@ struct VorticityEquation{n, m, T<:Real, S<:Real}
     imTerm::ImplicitTerm{n, S}
     exTerm::ExplicitTerm{n, m, T, S}
     function VorticityEquation{n, m, T, S}(Re::Real,
-                                           kforcing::Int, 
+                                           kforcing::Int,
                                            flags::UInt32) where {n, m, T, S}
         iseven(n) || throw(ArgumentError("`n` must be even, got $n"))
         iseven(m) || throw(ArgumentError("`m` must be even, got $m"))
@@ -115,20 +115,20 @@ struct VorticityEquation{n, m, T<:Real, S<:Real}
 end
 
 # outer constructor: main entry point
-function VorticityEquation(n::Int, 
-                           Re::Real, 
-                           kforcing::Int=4; 
+function VorticityEquation(n::Int,
+                           Re::Real,
+                           kforcing::Int=4;
                            T::Type{<:Real}=Float64,
-                           flags::UInt32=FFTW.MEASURE, 
-                           dealias::Union{Bool, Int}=true)
+                           flags::UInt32=FFTW.PATIENT,
+                           dealias::Bool=true)
     # if dealias is an int we interpret it as the size of the
     # larger grid over which we do interpolation, and assume that
-    # the user knows what he/she is doing. If it is a boolean we 
-    # select the appropriate value. For optimal performance the user 
-    # should select an appropriate pair of grid size, based on tests of 
+    # the user knows what he/she is doing. If it is a boolean we
+    # select the appropriate value. For optimal performance the user
+    # should select an appropriate pair of grid size, based on tests of
     # the FFTW compiled library on his/her machine.
-    m = dealias isa Int ? dealias : (dealias == true ? even_dealias_size(n) : n)
-    # compute eltype of differential operator data if we have a 
+    m = dealias == true ? even_dealias_size(n) : n
+    # compute eltype of differential operator data if we have a
     # variational number type as input
     S = T <: VarNum ? T.parameters[1] : T
     VorticityEquation{n, m, T, S}(Re, kforcing, flags)

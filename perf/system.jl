@@ -11,7 +11,7 @@ tmin_d = Float64[]
 tmin_a = Float64[]
 
 # try these
-ns = 32:2:256
+ns = [32:2:256]
 
 # loop
 for n = ns

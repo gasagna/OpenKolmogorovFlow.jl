@@ -1,6 +1,24 @@
 using Base.Test
 using OpenKolmogorovFlow
 
+@testset "js and ks                              " begin
+    @test OpenKolmogorovFlow.js(4) == (0, 1, 2)
+    @test OpenKolmogorovFlow.js(6) == (0, 1, 2,  3)
+    @test OpenKolmogorovFlow.ks(4) == (0, 1, 2, -1)
+    @test OpenKolmogorovFlow.ks(6) == (0, 1, 2, 3, -2, -1)
+end
+
+@testset "JtoI                                   " begin
+    @test OpenKolmogorovFlow.JtoI( 3) == 4
+    @test OpenKolmogorovFlow.JtoI( 0) == 1
+    @test OpenKolmogorovFlow.JtoI(-3) == 4
+    @test OpenKolmogorovFlow.KtoI( 0, 4)  == 1
+    @test OpenKolmogorovFlow.KtoI( 1, 4)  == 2
+    @test OpenKolmogorovFlow.KtoI(-1, 4)  == 4
+    @test OpenKolmogorovFlow.KtoI(-1, 6)  == 6
+    @test OpenKolmogorovFlow.KtoI(-2, 6)  == 5
+end
+
 @testset "ItoK                                   " begin
     # these are the wave numbers for k
     data_k = [0  0  0

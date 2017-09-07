@@ -48,5 +48,5 @@ end
     foo(v, u, c) = (v .= u .+ conj.(u) .* c)
 
     foo(v, u, c)
-    @test (@allocated foo(v, u, c)) == 0 
+    @test (@allocated foo(v, u, c)) == 0
 end

@@ -12,15 +12,17 @@ end
 
 @testset "symmetries                             " begin
     for n = [2, 24]
+        U = FFT(Field(randn(n, n)))
         d = n>>1
-        U = FTField(rfft(randn(n, n), [2, 1]))
-        for k = -d:d, j=-d:d
-            @test abs(U[j, k] - conj(U[-j, -k])) < 1e-13
+        for k = (-d+1):d, j = (-d+1):d
+            # it is not exactly zero, because of FFTW does
+            # not ensure exact conjugate symmetry
+            @test abs(U[j, k] - conj(U[-j, -k])) < 1e-16
         end
     end
 end
 
-@testset "cartesian                              " begin
+@testset "cartesian indexing                     " begin
     # construct data with appropriate symmetries
     data = [1+2im  9+10im 17+0im
             3+4im 11+12im 19+20im
@@ -46,7 +48,7 @@ end
     @test u[ 2,  0] ==  5+0im
     @test u[-2,  0] ==  5+0im
     @test u[-1,  0] ==  3-4im
-    
+
     @test u[ 0,  1] ==  9+10im
     @test u[ 1,  1] == 11+12im
     @test u[ 2,  1] == 13+14im
@@ -67,20 +69,10 @@ end
     end
 end
 
-@testset "symmetry                               " begin
-    for n = [2, 24]
-        d = n>>1
-        U = FTField(rfft(randn(n, n), [2, 1]))
-        for k = -d:d, j=-d:d
-            @test abs(U[j, k] - conj(U[-j, -k])) < 1e-13
-        end
-    end
-end
-
-@testset "linear                                 " begin
+@testset "linear indexing                        " begin
     data = rfft(randn(6, 6), [2, 1])
     u = FTField(data)
-    for i in 1:length(data)
+    for i in eachindex(data)
         @test u[i] == data[i]
     end
 end
@@ -95,7 +87,7 @@ end
     end
 end
 
-# this is meant to be a documentation of the properties of the FFT 
+# this is meant to be a documentation of the properties of the FFT
 # for a transform of 2D data over a grid with even number of points.
 @testset "transform                              " begin
     n = 4
@@ -175,101 +167,46 @@ end
 
 @testset "grow/shrink-to!                        " begin
     @testset "growto!                            " begin
-        data = Complex{Float64}[1+0im  9+10im 16+0im
-                                3+4im 11+12im 19+20im
-                                6+0im 13+14im 22+0im
-                                3-4im 15+16im 19-20im]
-        u = FTField(data)
-
-        # smaller size
-        v = FTField(2)
-        @test_throws ArgumentError growto!(v, u)
-        
-        # same size
-        v = FTField(4)
-        growto!(v, u)
-        @test v == u
-
-        # larger size
-        v = FTField(6)
-        growto!(v, u)
-
-        # note how the frequencies (2, 0), (0, 2) and (2, 2) are halved
-        @test v.data == Complex{Float64}[  1+0im  9+10im  8+0im    0+0im
-                                           3+4im 11+12im  19+20im  0+0im
-                                           3+0im 13+14im  11+0im   0+0im
-                                           0+0im  0+0im    0+0im   0+0im
-                                           3+0im  0+0im    0+0im   0+0im
-                                           3-4im  0+0im    0+0im   0+0im]
-
-        # define a field that can be contained on a 4×4 grid, or more.
-        # Note that some terms are zero, because some of the DFT 
-        # coefficients of real data are purely real, e.g. the (0, 0)
-        # frequency.
-        function fun(n) 
-            x, y = make_grid(n)
-            u   = 1.*cos.(0.*y .+ 0.*x) 
-            u .+= 3.*cos.(0.*y .+ 1.*x) .+ 4.*sin.( 0.*y .+ 1.*x)
-            u .+= 5.*cos.(0.*y .+ 2.*x) 
-            u .+= 2.*cos.(1.*y .+ 0.*x) .+ 1.*sin.( 1.*y .+ 0.*x)
-            u .+= 5.*cos.(1.*y .+ 1.*x) .+ 2.*sin.( 1.*y .+ 1.*x)
-            u .+= 9.*cos.(1.*y .+ 2.*x) .+ 3.*sin.( 1.*y .+ 2.*x)
-            u .+= 7.*cos.(2.*y .+ 0.*x) 
-            u .+= 1.*cos.(2.*y .+ 1.*x) .+ 3.*sin.( 2.*y .+ 1.*x)
-            u .+= 4.*cos.(2.*y .+ 2.*x) 
-            x, y, u
-        end                   
-        # define field on 4x4, then go to Fourier space  
-        x, y, u_small = fun(4)           
-        U_small = FFT(Field(u_small))     
-
-        # define same field on larger grid, then go to Fourier space
-        for n = [6, 8, 10]
-            x, y, u_large = fun(n)
-            U_large = FFT(Field(u_large))
-
-            # grow the 4x4 DFT to a nxn DFT
-            U_large_g = growto!(FTField(n), U_small)
-            u_large_g = IFFT(U_large_g)
-
-            # these should be equal
-            @test u_large ≈ u_large_g.data
+        # growing a field should not change its energy
+        U = FFT(Field(randn(6, 6)))
+        for m = [6, 12, 24, 48]
+            @test norm(U) ≈ norm(growto!(FTField(m, Complex{Float64}), U))
         end
     end
     @testset "shrinkto!                          " begin
         data = Complex{Float64}[1+0im 5-7im 5+4im 16+0im
-                                3+4im 3+3im 4-7im 19+20im
-                                4-1im 7+3im 4+8im 22+2im
+                                3+4im 3+3im 4-2im 19+20im
+                                4-1im 7+3im 2+3im 22+2im
                                 6+0im 5+8im 6-3im 12+0im
-                                4+1im 1+3im 2+4im 22+1im
-                                3-4im 5-3im 4-1im 19-20im]       
+                                4+1im 1+3im 4+0im 22-2im
+                                3-4im 5-3im 4-4im 19-20im]
 
-        # define field                                
-        v = FTField(data)                                
+        # define field
+        v = FTField(data)
 
-        # same size                                 
+        # same size
         w = FTField(6)
         shrinkto!(w, v)
         @test w.data == Complex{Float64}[1+0im 5-7im 5+4im 16+0im
-                                         3+4im 3+3im 4-7im 19+20im
-                                         4-1im 7+3im 4+8im 22+2im
+                                         3+4im 3+3im 4-2im 19+20im
+                                         4-1im 7+3im 2+3im 22+2im
                                          6+0im 5+8im 6-3im 12+0im
-                                         4+1im 1+3im 2+4im 22+1im
-                                         3-4im 5-3im 4-1im 19-20im]                                  
+                                         4+1im 1+3im 4+0im 22-2im
+                                         3-4im 5-3im 4-4im 19-20im]
 
-        # smaller                                         
+        # smaller
         w = FTField(4)
         shrinkto!(w, v)
-        @test w.data == Complex{Float64}[1+0im 5-7im 10+0im
-                                         3+4im 3+3im  4-7im 
-                                         8-0im 7+3im  8+0im 
-                                         3-4im 5-3im  4-1im]
+        @test w.data == Complex{Float64}[1+0*im 5-7im 10+0*im
+                                         3+4*im 3+3im  4-3*im
+                                         8+0*im 7+3im  4+0*im
+                                         3-4*im 5-3im  4+3*im]
 
-        # smaller                         
+        # smaller
         w = FTField(2)
         shrinkto!(w, v)
-        @test w.data == Complex{Float64}[1+0im 10+0im
-                                         6+0im  6+0im]
+        @test w.data == Complex{Float64}[1+0*im 10+0*im
+                                         6+0*im  6+0*im]
     end
 end
 

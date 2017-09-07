@@ -2,7 +2,7 @@ using Base.Test
 using OpenKolmogorovFlow
 
 @testset "derivatives                            " begin
-    
+
     # must use a float or an int
     @test_throws MethodError DiffOperator(4, :x, Complex{Int})
 
@@ -21,8 +21,8 @@ using OpenKolmogorovFlow
 
     # Note that these field do not represent valid
     # rfft data, because some of the symmetries have
-    # been lost, i.e. some terms that should be zero 
-    # are not zero. These are neglected by FFTW.            
+    # been lost, i.e. some terms that should be zero
+    # are not zero. These are neglected by FFTW.
     @test ∂U∂x.data   == [  0+0im   9im-10  34im-0
                             0+0im  11im-12  38im-40
                             0+0im  13im-14  42im-0
@@ -49,13 +49,13 @@ end
     n = 10
     x = linspace(0, 2π, n+1)[1:n]'
     y = linspace(0, 2π, n+1)[1:n]
-    
+
     # select α, β up to n/2-1, to avoid aliasing
     l = n>>1-1
 
     # make grid
     x, y = make_grid(n)
-    
+
     for α in rand(-l:l, 10), β in rand(-l:l, 10)
         # construct a random field
         cc, cs = randn(), randn()
@@ -65,7 +65,7 @@ end
         # transform to Fourier space
         U = FFT(u)
 
-        # calculate derivatives. This also tests broadcast for 
+        # calculate derivatives. This also tests broadcast for
         # operators
         Ux  = DiffOperator(n, :x,  Int64) .* U
         Uy  = DiffOperator(n, :y,  Int64) .* U

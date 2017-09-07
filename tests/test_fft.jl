@@ -2,11 +2,11 @@ using OpenKolmogorovFlow
 using Base.Test
 using VariationalNumbers
 
-@testset "allocating - some tests                " begin 
+@testset "allocating - some tests                " begin
     # make grid
     n = 4
     x, y = make_grid(n)
-    
+
     # constant field
     U = FTField(n)
     U[0, 0] = 1
@@ -55,13 +55,29 @@ end
     @test maximum(abs, FFT(IFFT(U)).data - U.data) < 1e-15
 end
 
+@testset "allocating - forw/inv - interpolate    " begin
+    n = 10
+    x_coarse, y_coarse = make_grid(n)
+    for k = -5:5
+        u_coarse = Field(cos.(k.*x_coarse.+0.*y_coarse))
+        U = FFT(u_coarse)
+
+        # go backwards on a finer grid
+        u_fine = IFFT(U, 2n)
+
+        # this should match
+        x_fine, y_fine = make_grid(2*n)
+        @test maximum(abs, u_fine.data - cos.(k.*x_fine.+0.*y_fine)) < 3e-15
+    end
+end
+
 @testset "utils                                  " begin
     # the reasoning is as follows. on a n × n grid the largest wave is
     # n/2. When you square this wave you get a wave at a frequency n.
     # Now, you need a grid large enough such that this wave does not
     # alias to waves equal to n/2 or lower. If it aliases to n/2 + 1,
     # for instance, you do not care, because you care about having alias
-    # free in the original n × n grid. So you find an a grid of size m, 
+    # free in the original n × n grid. So you find an a grid of size m,
     # such that n - m/2 > n/2, because on such a grid, the wave a frequency
     # n would alias to n - m/2. It is guaranteed that n/m > 1.5, the exact
     # values just depend on picking even grid sizes that are convenient
@@ -78,7 +94,7 @@ end
 
 @testset "advanced interface                     " begin
     # define cos(2y)
-    U = FTField(4)   
+    U = FTField(4)
     U[2, 0] = 1
 
     # define fields for dealiased and aliased calculations
@@ -104,7 +120,7 @@ end
     # now square. It should be cos(2y)^2 = 0.5*(1 + cos(4y))
     u_aliased .*= u_aliased
 
-    # and transform 
+    # and transform
     U_aliased = FFT(u_aliased)
 
     # of course we cannot hold the 4y wave and this is aliased to the zero frequency
@@ -125,13 +141,13 @@ end
     @test U_shrink.data == [0.5+0.0im  0.0+0.0im  0.0+0.0im
                             0.0+0.0im  0.0+0.0im  0.0+0.0im
                             0.0+0.0im  0.0+0.0im  0.0+0.0im
-                            0.0+0.0im  0.0+0.0im  0.0+0.0im] 
+                            0.0+0.0im  0.0+0.0im  0.0+0.0im]
 end
 
 @testset "advanced interface                     " begin
     for n = [4, 6, 8, 64]
         # define cos(n/2y)
-        U = FTField(n)   
+        U = FTField(n)
         U[n>>1, 0] = 1
 
         # define fields for dealiased  calculations
@@ -162,8 +178,8 @@ end
 # try squaring a lower frequency
 @testset "lower frequency                        " begin
     n = 6
-    U = FTField(n)   
-    
+    U = FTField(n)
+
     # sin(2y)^2 = 0.5*(1 - cos(4y))
     U[ 2, 0] =  0.5*im
     U[-2, 0] = -0.5*im
@@ -192,14 +208,14 @@ end
 
 @testset "product of two waves                   " begin
     n = 6
-    U = FTField(n)   
-    V = FTField(n)   
-    
+    U = FTField(n)
+    V = FTField(n)
+
     # product of two waves
-    A = 1+5im  
-    B = 2-3im  
-    U[ 1,  1] = A  
-    V[ 2,  3] = B 
+    A = 1+5im
+    B = 2-3im
+    U[ 1,  1] = A
+    V[ 2,  3] = B
 
     # define fields for dealiased  calculations
     u_dealiased = Field(even_dealias_size(n))
@@ -260,7 +276,7 @@ end
 
         # define dealiased transform, go to smaller size
         f! = ForwardFFT!(FTField{4, Complex{Float64}}, u)
-        
+
         # apply to same field size
         f!(U, u)
 

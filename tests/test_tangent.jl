@@ -13,10 +13,10 @@ end
 @testset "operators work on real and pert parts  " begin
     # take example operator, the laplacian
     Δ = DiffOperator(4, :xxyy, Float64)
-    
+
     # define a field with known values
     U = FTField(4, Complex{VarNum{Float64}}) + 1 + 3*im + 2*δ + 4*δ*im
-    
+
     # apply laplacian
     V = Δ.*U
 
@@ -27,10 +27,10 @@ end
 
     # take another example
     ∂ₓ = DiffOperator(4, :x, Float64)
-    
+
     # define a field with known values
     U = FTField(4, Complex{VarNum{Float64}}) + 1 + 3*im + 2*δ + 4*δ*im
-    
+
     # apply laplacian
     V = ∂ₓ.*U
 
@@ -68,7 +68,7 @@ end
     n = 64
     Re = 1
     kforcing = 4
-    
+
     for dealias in [false, true]
         # for each integration scheme
         for impl in [IMEXRK3R2R(IMEXRKCB3c, false),
@@ -82,7 +82,7 @@ end
             f = integrator(N, L, IMEXRKScheme(impl, FTField(n, Complex{Float64})), 0.005)
 
             # start from a random non zero initial conditions
-            ω = Field(randn(n, n)); ω .-= mean(ω) 
+            ω = Field(randn(n, n)); ω .-= mean(ω)
             Ω0 = FFT(ω)
 
             # integrate in time
@@ -98,8 +98,8 @@ end
             # integrate in time
             Ωf1_var = f(copy(Ω0), 1)
 
-            # the real part, (not the perturbation), should be the same, 
-            # regardless of the fact that we are integrating the variational 
+            # the real part, (not the perturbation), should be the same,
+            # regardless of the fact that we are integrating the variational
             # equations as well difference arise in the differences in FFTW
             # algorithms for data that is not layed out in memory in the same way
             a = real.(Ωf1.data)
@@ -120,7 +120,7 @@ end
     n = 32
     Re = 20
     kforcing = 4
-    
+
     for dealias in [false, true]
         # for each integration scheme
         for impl in [IMEXRK3R2R(IMEXRKCB3c, false),
@@ -134,11 +134,11 @@ end
             f = integrator(N, L, IMEXRKScheme(impl, FTField(n, Complex{Float64})), 0.005)
 
             # start from a random non zero initial conditions
-            ω = Field(randn(n, n)); ω .-= mean(ω) 
+            ω = Field(randn(n, n)); ω .-= mean(ω)
             Ω0_reference = FFT(ω)
 
             # Run for a while to land on attractor. Otherwise, we are just
-            # looking at the viscous decay of the high frequency modes. 
+            # looking at the viscous decay of the high frequency modes.
             # After this Ω0 will be the initial condition for the simulation
             # of the variational equations.
             f(Ω0_reference, 100)
@@ -148,7 +148,7 @@ end
 
             # now perturb Ω0 along a particular direction
             Ω0_reference[1, 1] += 1e-6
-            
+
             # and integrate in time, for the same time span as before
             Ωf2 = f(copy(Ω0_reference), 10)
 
@@ -168,9 +168,9 @@ end
             # define initial condition, using the previous one
             Ω0 = Ω0_reference + 0*δ
 
-            # perturb mode (1, 1), by the same amount as in the nonlinear 
-            # simulation. The perturbation size does not matter, because 
-            # the equations are linearised. We do this because is is easier 
+            # perturb mode (1, 1), by the same amount as in the nonlinear
+            # simulation. The perturbation size does not matter, because
+            # the equations are linearised. We do this because is is easier
             # to check the two. Note that here, we do not perturb the initial
             # condition of the nonlinear simulation. We set the initial condition
             # of the variational equations

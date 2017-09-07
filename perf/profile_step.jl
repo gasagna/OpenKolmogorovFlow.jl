@@ -1,5 +1,6 @@
 using OpenKolmogorovFlow
 using IMEXRKCB
+using VariationalNumbers
 using BenchmarkTools
 
 function foo()
@@ -9,10 +10,10 @@ function foo()
     n = 132
 
     # get explicit and implicit parts
-    Ld, Nd = imex(VorticityEquation(n, Re, kforcing, Float64, FFTW.MEASURE, true))
+    Ld, Nd = imex(VorticityEquation(n, Re, kforcing; T=VarNum{Float64}, flags=FFTW.MEASURE, dealias=false))
 
     # initial condition
-    Ω₀ = FTField(n)
+    Ω₀ = FTField(n, Complex{VarNum{Float64}})
 
     # define scheme
     scheme = IMEXRKScheme(IMEXRK4R3R(IMEXRKCB4, false), Ω₀)
