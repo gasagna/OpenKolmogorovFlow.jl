@@ -76,10 +76,10 @@ Base.similar(U::FTField{n, T}, m::Int=n) where {n, T} = FTField(m, T)
 # ~~~ Copy one field to the other, e.g. for zero padding or truncation ~~~
 
 # same size is just a copy
-growto!(W::FTField{n}, U::FTField{n}) where {n} = W .= U
+@inline growto!(W::FTField{n}, U::FTField{n}) where {n} = W .= U
 
 # different size requires special handling of boundary terms
-function growto!(W::AbstractFTField{m}, U::AbstractFTField{n}) where {m, n}
+@inline function growto!(W::AbstractFTField{m}, U::AbstractFTField{n}) where {m, n}
     m >= n || throw(ArgumentError("output `W` should be larger or equal than input `U`"))
     @inbounds begin
         dU = n>>1
@@ -101,9 +101,9 @@ function growto!(W::AbstractFTField{m}, U::AbstractFTField{n}) where {m, n}
 end
 
 # same size is a copy
-shrinkto!(W::FTField{n}, U::FTField{n}) where {n} = W .= U
+@inline shrinkto!(W::AbstractFTField{n}, U::AbstractFTField{n}) where {n} = W .= U
 
-function shrinkto!(W::FTField{n}, U::FTField{m}) where {n, m}
+@inline function shrinkto!(W::AbstractFTField{n}, U::AbstractFTField{m}) where {n, m}
     m >= n || throw(ArgumentError("input `U` should be larger or equal than output `W`"))
     @inbounds begin
         dW = n>>1
