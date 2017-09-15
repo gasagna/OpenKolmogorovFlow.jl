@@ -22,7 +22,7 @@ using BenchmarkTools
     # is checked.
     for (scheme, elaps_exp) in [(IMEXRKScheme(IMEXRK3R2R(IMEXRKCB3c, false), Ω₀), 0.00155),
                                 (IMEXRKScheme(IMEXRK3R2R(IMEXRKCB3e, false), Ω₀), 0.00155),
-                                (IMEXRKScheme(IMEXRK4R3R(IMEXRKCB4,  false), Ω₀), 0.00300)]
+                                (IMEXRKScheme(IMEXRK4R3R(IMEXRKCB4,  false), Ω₀), 0.00310)]
 
         # count allocation and time
         @test (@belapsed  IMEXRKCB.step!($scheme, $N, $L, 0.0, 0.1, $Ω₀)) < elaps_exp
