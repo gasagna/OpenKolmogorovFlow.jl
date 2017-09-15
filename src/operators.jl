@@ -1,10 +1,11 @@
-export DiffOperator
-
-struct DiffOperator{n, T}
+struct DiffOperator{n, T} <: AbstractFTOperator{n, T}
     data::Matrix{T}
 end
 
-function DiffOperator(n::Int, i::Symbol, ::Type{T}) where {T<:Union{AbstractFloat, Integer}}
+# read only
+Base.@propagate_inbounds @inline Base.getindex(d::DiffOperator, i::Int) = d.data[i]
+
+function DiffOperator(n::Int, i::Symbol, ::Type{T}=Float64) where {T<:Union{AbstractFloat, Integer}}
     i == :x    && return DiffOperator{n, Complex{T}}(     Complex{T}[im*j for k=      1:n,    j=0:n>>1])
     i == :y    && return DiffOperator{n, Complex{T}}(vcat(Complex{T}[im*k for k=      0:n>>1, j=0:n>>1],
                                                           Complex{T}[im*k for k=-n>>1+1:-1,   j=0:n>>1]))
