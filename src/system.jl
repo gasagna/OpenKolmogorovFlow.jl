@@ -1,134 +1,152 @@
 # add method to this function
 import IMEXRKCB: ImcA!
 
-export ImplicitTerm, ExplicitTerm, VorticityEquation, imex
+export VorticityEquation, 
+       imex, 
+       ForwardMode,
+       TangentMode
+
+# ~~~ DISPATCH BASED ON SOLUTION MODE ~~~
+abstract type AbstractMode end
+abstract type AbstractAugmentedMode <: AbstractMode end
+abstract type AbstractAdjointMode   <: AbstractAugmentedMode end
+
+struct ForwardMode <: AbstractMode end
+struct TangentMode <: AbstractAugmentedMode end
+
 
 # ~~~ THE VISCOUS TERM OF THE GOVERNING EQUATIONS ~~~
-struct ImplicitTerm{n, T}
-    dx²dy²::DiffOperator{n, T}
-    ν::Float64                 # inverse of Reynolds number
-    function ImplicitTerm{n, T}(Re::Real) where {n, T}
-        iseven(n) || throw(ArgumentError("`n` must be even, got $n"))
-        new(DiffOperator(n, :xxyy, T), 1/Re)
-    end
+struct ImplicitTerm{n, T, D<:DiffOperator{n, T}} <: AbstractFTOperator{n, T}
+    Δ::D
+    ν::Float64 # inverse of Reynolds number
 end
 
 # Outer constructor
-ImplicitTerm(n::Int, Re::Real, ::Type{T}) where {T} = ImplicitTerm{n, T}(Re)
+function ImplicitTerm(n::Int, Re::Real, ::Type{T}) where {T} 
+    Δ = DiffOperator(n, :xxyy, T)
+    ImplicitTerm{n, T, typeof(Δ)}(Δ, Re)
+end
+
+# Read-only data structure
+Base.@propagate_inbounds @inline Base.getindex(L::ImplicitTerm, i::Int) = L.Δ[i]*L.ν
 
 # Methods to satisfy the IMEXRKCB interface
-Base.A_mul_B!(out::FTField{n}, V::ImplicitTerm{n}, U::FTField{n}) where {n} =
-    (ν = V.ν; out .= V.dx²dy² .* U .* ν)
+Base.A_mul_B!(out::A, L::ImplicitTerm{n}, U::A) where {n, A<:AbstractFTField{n}} =
+    (out .= L .* U)
 
-ImcA!(V::ImplicitTerm{n}, c::Real, y::FTField{n}, z::FTField{n}) where {n} =
-    (z .= y ./ (1 .- c .* V.dx²dy² .* V.ν))
+ImcA!(L::ImplicitTerm{n}, c::Real, Y::A, Z::A) where {n, A<:AbstractFTField{n}} =
+    (Z .= Y ./ (1 .- c .* L))
 
 # ~~~ THE NONLINEAR TERM OF THE GOVERNING EQUATIONS PLUS THE FORCING ~~~
-struct ExplicitTerm{n, m, T<:Real, IT<:InverseFFT!, FT<:ForwardFFT!}
-       ifft!::IT
-        ftt!::FT
-    kforcing::Int
-           U::FTField{n, Complex{T}, Matrix{Complex{T}}}
-           V::FTField{n, Complex{T}, Matrix{Complex{T}}}
-        ∂Ω∂x::FTField{n, Complex{T}, Matrix{Complex{T}}}
-        ∂Ω∂y::FTField{n, Complex{T}, Matrix{Complex{T}}}
-          dx::DiffOperator{n, Complex{T}}
-          dy::DiffOperator{n, Complex{T}}
-      dx²dy²::DiffOperator{n, T}
-           u::Field{m, T, Matrix{T}}
-           v::Field{m, T, Matrix{T}}
-        ∂ω∂x::Field{m, T, Matrix{T}}
-        ∂ω∂y::Field{m, T, Matrix{T}}
-    function ExplicitTerm{n, m, T}(kforcing::Int, flags::UInt32) where {n, m, T}
-        iseven(n) || throw(ArgumentError("`n` must be even, got $n"))
-        iseven(m) || throw(ArgumentError("`m` must be even, got $m"))
-        m ≥ n     || throw(ArgumentError("`m` must be bigger than `n`, got `n, m= $n, $m`. Are you sure?"))
 
-        # complex fields have size n
-        a, b, c, d = FTField.((n, n, n, n), Complex{T})
-
-        # real fields (might) have (larger) size m
-        f, g, h, i = Field.((m, m, m, m), T)
-
-        # transforms
-        ifft! = InverseFFT!(Field{m, T}, a,  flags)
-         fft! = ForwardFFT!(FTField{n, Complex{T}}, f,  flags)
-
-        new{n, m, T, typeof(ifft!), typeof(fft!)}(ifft!, fft!, kforcing,
-            a, b, c, d,
-            DiffOperator(n, :x, T),  DiffOperator(n, :y, T), DiffOperator(n, :xxyy, T),
-            f, g, h, i)
-    end
+# We could be stricter on the definition of type below, but would lead to more 
+# complicated code, without too much benefit. It is unlikely that anyone will
+# instantiate this directly, so we avoid over constraining input parameters
+struct ExplicitTerm{n, M<:AbstractMode,                          
+                    FT<:AbstractFTField,    F<:AbstractField,       
+                    D1<:AbstractFTOperator, D2<:AbstractFTOperator, 
+                    ITT<:InverseFFT!,       FTT<:ForwardFFT!}
+           U::FT;     V::FT; dΩdx::FT; dΩdy::FT # storage
+           u::F;      v::F;  dωdx::F;  dωdy::F  # storage
+          dx::D1;    dy::D1;    Δ::D2           # operators
+       ifft!::ITT; fft!::FTT                    # transforms
+    kforcing::Int                               # forcing wave number
+        mode::M                                 # contains solver specific actions
 end
 
 # Outer constructor
-ExplicitTerm(n::Int, m::Int, kforcing::Int, ::Type{T}, flags::UInt32) where {T} =
-     ExplicitTerm{n, m, T}(kforcing, flags)
+function ExplicitTerm(n::Int, m::Int, mode::M, kforcing::Int, ::Type{S}, flags::UInt32) where {S, M<:AbstractMode}
+    # stupid check
+    m ≥ n || throw(ArgumentError("`m` must be bigger than `n`, got `n, m= $n, $m`. Are you sure?"))
 
-function (Eq::ExplicitTerm{n})(t::Real, Ω::FTField{n}, Ω̇::FTField{n}, add::Bool=false) where {n}
+    # get appropriate constructor and eltype
+    CT, C = M <: AbstractAugmentedMode ? (AugmentedFTField, AugmentedField) : (FTField,    Field)
+    ET, E = M <: AbstractAugmentedMode ? (Dual{Complex{S}}, Dual{S})        : (Complex{S}, S)
+
+    # complex fields have size `n` but real fields might have larger size `m`
+    a, b, c, d = CT.((n, n, n, n), ET)
+    f, g, h, i =  C.((m, m, m, m), E)
+
+    # transforms
+    ifft! = InverseFFT!(m, a, flags)
+     fft! = ForwardFFT!(n, f, flags)
+
+    # operators
+    dx, dy, Δ = DiffOperator(n, :x, S), DiffOperator(n, :y, S), DiffOperator(n, :xxyy, S)
+
+    # construct object
+    ExplicitTerm{n, M, typeof(a), typeof(f), 
+                 typeof(dx), typeof(Δ), 
+                 typeof(ifft!), typeof(fft!)}(a, b, c, d, 
+                                              f, g, h, i, 
+                                              dx, dy, Δ, 
+                                              ifft!, fft!, kforcing, mode)
+end
+
+# This satisfies a callable interface suitable for IMEXRKCB. The fourth
+# argument `add` specifies whether `dΩdt` is overwritten or added to.
+function (Eq::ExplicitTerm{n, M, FT})(t::Real, Ω::FT, dΩdt::FT, add::Bool=false) where {n, M, FT<:AbstractFTField{n}}
     # set mean to zero
     Ω[0, 0] = zero(eltype(Ω))
 
     # obtain vorticity derivatives
-    Eq.∂Ω∂x .= Eq.dx .* Ω
-    Eq.∂Ω∂y .= Eq.dy .* Ω
+    Eq.dΩdx .= Eq.dx .* Ω
+    Eq.dΩdy .= Eq.dy .* Ω
 
     # obtain velocity components. Set mean to zero.
-    Eq.U .= .- (Eq.dx²dy²) .\ Eq.∂Ω∂y; Eq.U[0, 0] = zero(eltype(Eq.U))
-    Eq.V .=    (Eq.dx²dy²) .\ Eq.∂Ω∂x; Eq.V[0, 0] = zero(eltype(Eq.V))
+    Eq.U .= .- Eq.dΩdy ./ Eq.Δ; Eq.U[0, 0] = zero(eltype(Ω))
+    Eq.V .=    Eq.dΩdx ./ Eq.Δ; Eq.V[0, 0] = zero(eltype(Ω))
 
     # inverse transform to physical space into temporaries
     Eq.ifft!(Eq.u,    Eq.U)
     Eq.ifft!(Eq.v,    Eq.V)
-    Eq.ifft!(Eq.∂ω∂x, Eq.∂Ω∂x)
-    Eq.ifft!(Eq.∂ω∂y, Eq.∂Ω∂y)
+    Eq.ifft!(Eq.dωdx, Eq.dΩdx)
+    Eq.ifft!(Eq.dωdy, Eq.dΩdy)
 
     # multiply in physical space. Overwrite u
-    Eq.u .= .- Eq.u.*Eq.∂ω∂x .- Eq.v.*Eq.∂ω∂y
+    Eq.u  .= .- Eq.u.*Eq.dωdx .- Eq.v.*Eq.dωdy
 
     # forward transform to Fourier space into destination
     if add == true
-        Eq.ftt!(Eq.U, Eq.u); Ω̇ .+= Eq.U
+        Eq.fft!(Eq.U, Eq.u); dΩdt .+= Eq.U
     else
-        Eq.ftt!(Ω̇,    Eq.u)
+        Eq.fft!(dΩdt,    Eq.u)
     end
 
     # ~~~ FORCING TERM ~~~
-    Ω̇[ Eq.kforcing, 0] -= Eq.kforcing/2
-    Ω̇[-Eq.kforcing, 0] -= Eq.kforcing/2
+    dΩdt[ Eq.kforcing, 0] -= Eq.kforcing/2
+    dΩdt[-Eq.kforcing, 0] -= Eq.kforcing/2
 
     return nothing
 end
 
 
-# ~~~ THE GOVERNING EQUATIONS ~~~
-struct VorticityEquation{n, m, T<:Real}
-    imTerm::ImplicitTerm{n, T}
-    exTerm::ExplicitTerm{n, m, T}
-    function VorticityEquation{n, m, T}(Re::Real,
-                                        kforcing::Int,
-                                        flags::UInt32) where {n, m, T}
-        iseven(n) || throw(ArgumentError("`n` must be even, got $n"))
-        iseven(m) || throw(ArgumentError("`m` must be even, got $m"))
-        new(ImplicitTerm(n, Re, T), ExplicitTerm(n, m, kforcing, T, flags))
-    end
+# ~~~ SOLVER OBJECT FOR THE GOVERNING EQUATIONS ~~~
+
+struct VorticityEquation{n, IT<:ImplicitTerm{n}, ET<:ExplicitTerm{n}}
+    imTerm::IT
+    exTerm::ET
 end
 
 # outer constructor: main entry point
 function VorticityEquation(n::Int,
                            Re::Real,
                            kforcing::Int=4;
-                           T::Type{<:Real}=Float64,
+                           mode::AbstractMode=ForwardMode(),
+                           numtype::Type{S}=Float64,
                            flags::UInt32=FFTW.PATIENT,
-                           dealias::Bool=true)
+                           dealias::Bool=true) where {S<:Real}
+    iseven(n) || throw(ArgumentError("`n` must be even, got $n"))
     m = dealias == true ? even_dealias_size(n) : n
-    VorticityEquation{n, m, T}(Re, kforcing, flags)
+    impl = ImplicitTerm(n, Re, S)
+    expl = ExplicitTerm(n, m, mode, kforcing, S, flags)
+    VorticityEquation{n, typeof(impl), typeof(expl)}(impl, expl)
 end
 
 # evaluate right hand side of governing equations
-function (eq::VorticityEquation{n})(t::Real, Ω::FTField{n}, Ω̇::FTField{n}) where {n}
-    A_mul_B!(Ω̇, eq.imTerm, Ω)
-    eq.exTerm(t, Ω, Ω̇, true)
+function (eq::VorticityEquation{n})(t::Real, Ω::FTField{n}, dΩdt::FTField{n}) where {n}
+    A_mul_B!(dΩdt, eq.imTerm, Ω)
+    eq.exTerm(t, Ω, dΩdt, true)
 end
 
 # obtain two components
