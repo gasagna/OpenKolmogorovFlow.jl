@@ -24,7 +24,7 @@ end
 # Outer constructor
 function ImplicitTerm(n::Int, Re::Real, ::Type{T}) where {T} 
     Δ = DiffOperator(n, :xxyy, T)
-    ImplicitTerm{n, T, typeof(Δ)}(Δ, Re)
+    ImplicitTerm{n, T, typeof(Δ)}(Δ, 1/Re)
 end
 
 # Read-only data structure
