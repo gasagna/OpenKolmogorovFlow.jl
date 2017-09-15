@@ -14,10 +14,14 @@ using OpenKolmogorovFlow
     U = FTField(data)
 
     # do work
-    ∂U∂x   = DiffOperator(4, :x,  Int64) .* U
-    ∂U∂y   = DiffOperator(4, :y,  Int64) .* U
-    ∂²U∂x² = DiffOperator(4, :xx, Int64) .* U
-    ∂²U∂y² = DiffOperator(4, :yy, Int64) .* U
+    ∂U∂x    = FTField(4) 
+    ∂U∂x   .= DiffOperator(4, :x,  Int64) .* U
+    ∂U∂y    = FTField(4) 
+    ∂U∂y   .= DiffOperator(4, :y,  Int64) .* U
+    ∂²U∂x²  = FTField(4) 
+    ∂²U∂x² .= DiffOperator(4, :xx, Int64) .* U
+    ∂²U∂y²  = FTField(4) 
+    ∂²U∂y² .= DiffOperator(4, :yy, Int64) .* U
 
     # Note that these field do not represent valid
     # rfft data, because some of the symmetries have
@@ -67,10 +71,14 @@ end
 
         # calculate derivatives. This also tests broadcast for
         # operators
-        Ux  = DiffOperator(n, :x,  Int64) .* U
-        Uy  = DiffOperator(n, :y,  Int64) .* U
-        Uxx = DiffOperator(n, :xx, Int64) .* U
-        Uyy = DiffOperator(n, :yy, Int64) .* U
+        Ux   = FTField(n) 
+        Ux  .= DiffOperator(n, :x,  Int64) .* U
+        Uy   = FTField(n) 
+        Uy  .= DiffOperator(n, :y,  Int64) .* U
+        Uxx  = FTField(n) 
+        Uxx .= DiffOperator(n, :xx, Int64) .* U
+        Uyy  = FTField(n) 
+        Uyy .= DiffOperator(n, :yy, Int64) .* U
 
         # check against analytic value
         @test IFFT(Ux).data  ≈    -α.*cc.*sin.(α.*x .+ β.*y) .+ α.*cs.*cos.(α.*x .+ β.*y)
