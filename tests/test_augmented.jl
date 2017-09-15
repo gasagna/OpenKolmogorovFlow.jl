@@ -8,7 +8,7 @@ using DualNumbers
     @testset "laplacian                          " begin
         ux, up = Field(cos.(2x .+ 3y)), Field(sin.(3x .+ 4y))
         Ux, Up = FFT(ux), FFT(up); U = AugmentedFTField(Ux, Up); V = similar(U)
-        Δ = ImplicitTerm(n, 1, Float64)
+        Δ = OpenKolmogorovFlow.ImplicitTerm(n, 1, Float64)
 
         V  .= Δ .* U
         @test IFFT(state(V)).data ≈ .-4*cos.(2x .+ 3y) .-  9*cos.(2x .+ 3y)
