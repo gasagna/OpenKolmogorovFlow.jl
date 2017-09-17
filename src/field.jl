@@ -1,6 +1,13 @@
 export Field, fieldsize, make_grid
 
-struct Field{n, T<:Real, M<:AbstractMatrix{T}} <: AbstractMatrix{T}
+abstract type AbstractField{n, T} <: AbstractMatrix{T} end
+Base.indices(f::AbstractField{n}) where {n} = (0:n-1, 0:n-1)
+Base.linearindices(f::AbstractField{n}) where {n} =  1:n^2
+Base.IndexStyle(::Type{<:AbstractField}) = Base.IndexLinear()
+fieldsize(::Type{<:AbstractField{n}}) where {n} = n
+fieldsize(u::AbstractField{n}) where {n} = n
+
+struct Field{n, T<:Real, M<:AbstractMatrix{T}} <: AbstractField{n, T}
     data::M
     function Field{n, T, M}(data::M) where {n, T, M}
         Field_checksize(data, n)
@@ -20,8 +27,8 @@ function Field_checksize(data::AbstractMatrix, n::Int)
     N == n    || throw(ArgumentError("wrong column number, got $N, should be $n"))
 end
 
-fieldsize(::Type{Field{n}}) where {n} = n
-fieldsize(::Field{n})       where {n} = n
+# accessors functions
+@inline Base.parent(U::Field) = U.data
 
 # ~~~ array interface ~~~
 @inline function reindex(n, i, j)
@@ -59,10 +66,7 @@ end
     return val
 end
 
-Base.indices(f::Field{n})       where n = (0:n-1, 0:n-1)
-Base.linearindices(f::Field{n}) where n =  1:n^2
-Base.IndexStyle(::Type{Field}) = Base.IndexLinear()
-Base.similar(u::Field) = Field(similar(u.data))
+Base.similar(u::Field{n, T}, m::Int=n) where {n, T} = Field(m, T)
 
 # ~~~ GRID FUNCTIONALITY ~~~
 function make_grid(n)

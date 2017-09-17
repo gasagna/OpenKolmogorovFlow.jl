@@ -11,10 +11,10 @@ using Base.Test
 end
 
 @testset "symmetries                             " begin
-    for n = [2, 24]
+    for n = [4, 24]
         U = FFT(Field(randn(n, n)))
         d = n>>1
-        for k = (-d+1):d, j = (-d+1):d
+        for k = (-d+1):(d-1), j = (-d+1):(d-1)
             # it is not exactly zero, because of FFTW does
             # not ensure exact conjugate symmetry
             @test abs(U[j, k] - conj(U[-j, -k])) < 1e-16
@@ -31,42 +31,35 @@ end
     u = FTField(data)
 
     # inbounds
-    @test u[ 0, -2] == 17-0im
-    @test u[ 1, -2] == 19+20im
-    @test u[ 2, -2] == 21-0im
-    @test u[-2, -2] == 21-0im
-    @test u[-1, -2] == 19-20im
-
     @test u[ 0, -1] ==  9-10im
     @test u[ 1, -1] == 15-16im
     @test u[ 2, -1] == 13-14im
-    @test u[-2, -1] == 13-14im
     @test u[-1, -1] == 11-12im
 
     @test u[ 0,  0] ==  1+2im
     @test u[ 1,  0] ==  3+4im
     @test u[ 2,  0] ==  5+0im
-    @test u[-2,  0] ==  5+0im
     @test u[-1,  0] ==  3-4im
 
     @test u[ 0,  1] ==  9+10im
     @test u[ 1,  1] == 11+12im
     @test u[ 2,  1] == 13+14im
-    @test u[-2,  1] == 13+14im
     @test u[-1,  1] == 15+16im
 
     @test u[ 0,  2] == 17+0im
     @test u[ 1,  2] == 19+20im
     @test u[ 2,  2] == 21+0im
-    @test u[-2,  2] == 21+0im
     @test u[-1,  2] == 19-20im
 
     # out of bounds
-    for k=-4:4, j=-4:4
-        if max(abs(k), abs(j)) > 2
-            @test_throws BoundsError u[k, j]
-        end
-    end
+    @test_throws BoundsError u[ 0, -3]
+    @test_throws BoundsError u[ 0,  3]
+    @test_throws BoundsError u[ 0, -2]
+    @test_throws BoundsError u[ 1, -2]
+    @test_throws BoundsError u[-2, -2]
+    @test_throws BoundsError u[-2,  0]
+    @test_throws BoundsError u[-3,  0]
+    @test_throws BoundsError u[ 3,  0]
 end
 
 @testset "linear indexing                        " begin
@@ -85,10 +78,12 @@ end
             @test typeof(V) == FTField{n, Complex{T}, Matrix{Complex{T}}}
         end
     end
+    # different size
+    U = FTField(6, Complex{Float64})
+    V = similar(U, 8)
+    @test typeof(V) == FTField{8, Complex{Float64}, Matrix{Complex{Float64}}}
 end
 
-# this is meant to be a documentation of the properties of the FFT
-# for a transform of 2D data over a grid with even number of points.
 @testset "transform                              " begin
     n = 4
     x, y = make_grid(n)
@@ -105,7 +100,6 @@ end
     f = cos.(0.*x .+ 2.*y) .+ 2.*sin.(0.*x .+ 2.*y)
     U = FFT(Field(f))
     @test U[ 2, 0] ≈ 1
-    @test U[-2, 0] ≈ 1
 
     # for k = 0 we count the value in full. The coefficient
     # must be real
@@ -130,7 +124,6 @@ end
     f = cos.(2.*x .+ 0.*y) .+ 2.*sin.(2.*x .+ 0.*y)
     U = FFT(Field(f))
     @test U[0,  2] ≈ 1
-    @test U[0, -2] ≈ 1
 
     # for j = -N/2 the result should be equal to that of j = +N/2
     fp = cos.(+ 2.*x .+ 0.*y); Up = FFT(Field(f))
@@ -146,23 +139,19 @@ end
     f = cos.(1.*x .+ 2.*y) .+ 3.*sin.(1.*x .+ 2.*y)
     U = FFT(Field(f))
     @test U[ 2,  1] ≈ 0.5*(1 - 3im)
-    @test U[-2, -1] ≈ 0.5*(1 + 3im)
 
     f = cos.(2.*x .+ 1.*y) .+ 4.*sin.(2.*x .+ 1.*y)
     U = FFT(Field(f))
     @test U[ 1,  2] ≈ 0.5*(1 - 4im)
-    @test U[-1, -2] ≈ 0.5*(1 + 4im)
 
     f = 2.*cos.(2.*x .- 1.*y) .+ 1.*sin.(2.*x .- 1.*y)
     U = FFT(Field(f))
     @test U[-1,  2] ≈ 0.5*(2 - 1im)
-    @test U[ 1, -2] ≈ 0.5*(2 + 1im)
 
     # the corner wave number is real
     f = cos.(2.*x .+ 2.*y) .+ 4.*sin.(2.*x .+ 2.*y)
     U = FFT(Field(f))
     @test U[ 2,  2] ≈ 1
-    @test U[-2, -2] ≈ 1
 end
 
 @testset "grow/shrink-to!                        " begin
@@ -207,12 +196,5 @@ end
         shrinkto!(w, v)
         @test w.data == Complex{Float64}[1+0*im 10+0*im
                                          6+0*im  6+0*im]
-    end
-end
-
-@testset "fieldsize                              " begin
-    for n in 2:2:10
-        @test fieldsize(FTField(n)) == n
-        @test fieldsize(FTField{n}) == n
     end
 end
