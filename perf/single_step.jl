@@ -1,5 +1,6 @@
 using OpenKolmogorovFlow
 using IMEXRKCB
+using BenchmarkTools
 
 # parameters
 const Re = 40
@@ -16,4 +17,4 @@ Ld, Nd = imex(VorticityEquation(n, Re, kforcing; dealias=true))
 scheme = IMEXRKScheme(IMEXRK4R3R(IMEXRKCB4, false), Ω₀)
 
 # measure time it takes to complete a step
-println(minimum([@elapsed step!(scheme, Nd, Ld, 0, 0.1, Ω₀) for i = 1:100]))
+@btime step!($scheme, $Nd, $Ld, 0, 0.1, $Ω₀)

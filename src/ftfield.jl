@@ -1,42 +1,53 @@
-export AbstractFTField, FTField, growto!, shrinkto!, fieldsize
+export AbstractFTField, FTField, growto!, shrinkto!
 
-# AbstractType for Fourier Transformed fields
-abstract type AbstractFTField{n, T} <: AbstractMatrix{T} end
-Base.indices(::AbstractFTField{n}) where {n} = (d = n>>1; (-d:d, -d:d))
-Base.linearindices(U::AbstractFTField{n}) where {n} = 1:(n*(n>>1+1))
-Base.IndexStyle(::Type{<:AbstractFTField}) = IndexLinear()
+# ~~~ ABSTRACT TYPE FOR STRUCTURED, ARRAY-LIKE OBJECTS FROM FFT ~~~
+abstract type AbstractFTArray{n, T}    <: AbstractMatrix{T}  end
+abstract type AbstractFTField{n, T}    <: AbstractFTArray{n, T} end
+abstract type AbstractFTOperator{n, T} <: AbstractFTArray{n, T} end
 
-# Main type
-struct FTField{n, T<:Complex, M<:AbstractMatrix{T}} <: AbstractFTField{n, T}
-    data::M
-    function FTField{n, T, M}(data::M) where {n, T, M}
-        FTField_checksize(data, n)
-        new(data)
-    end
+Base.size(::AbstractFTArray{n})      where {n} = (n, n>>1+1)
+Base.eltype(::AbstractFTArray{n, T}) where {n, T} = T
+Base.IndexStyle(::Type{<:AbstractFTArray}) = IndexLinear()
+fieldsize(::Type{<:AbstractFTArray{n}}) where {n} = n
+fieldsize(U::AbstractFTArray{n}) where {n} = n
+
+function Base.checkbounds(U::AbstractFTArray{n}, k::Int, j::Int) where {n}
+    d = n>>1
+    -d+1 ≤ j ≤ d || throw(BoundsError(U, (k, j)))
+    -d+1 ≤ k ≤ d || throw(BoundsError(U, (k, j)))
+    return nothing
 end
 
-fieldsize(::Type{FTField{n}}) where {n} = n
-fieldsize(::FTField{n})       where {n} = n
 
-FTField(n::Int) = FTField(n, Complex{Float64})
-FTField(n::Int, T::Type) = FTField(zeros(T, n, n>>1+1))
-FTField(data::AbstractMatrix) = FTField{size(data, 1), eltype(data), typeof(data)}(data)
+# ~~~ MAIN TYPE ~~~
+struct FTField{n, T<:Complex, M<:AbstractMatrix{T}} <: AbstractFTField{n, T}
+    data::M
+    FTField{n}(data::M) where {n, T, M<:AbstractMatrix{T}} = 
+        new{n, T, M}(_checksize(data, n))
+end
 
-function FTField_checksize(data::AbstractMatrix, n::Int)
+# extra constructors
+FTField(n::Int) = FTField(n, Complex128)
+FTField(n::Int, ::Type{T}) where {T} = FTField(zeros(T, n, n>>1+1))
+FTField(data::AbstractMatrix) = FTField{size(data, 1)}(data)
+
+# size checker
+function _checksize(data::AbstractMatrix{<:Complex}, n::Int)
     M, N = size(data)
     iseven(n)   || throw(ArgumentError("`n` must be even, got $n"))
-    M == n      || throw(ArgumentError("wrong row number, got $M"))
-    N == n>>1+1 || throw(ArgumentError("wrong column number, got $N"))
+    M == n      || throw(ArgumentError("wrong row number, got $M but wanted $n"))
+    N == n>>1+1 || throw(ArgumentError("wrong column number, got $N but wanted $n"))
+    return data
 end
 
 # ~~~ array interface ~~~
-@inline function Base.getindex(U::FTField{n}, k::Int, j::Int) where n
+@inline function Base.getindex(U::FTField{n}, k::Int, j::Int) where {n}
     @boundscheck checkbounds(U, k, j)
     @inbounds ret = U.data[KJtoI(k, j, n)]
     rectify(ret, j)
 end
 
-@inline function Base.setindex!(U::FTField{n}, val::Number, k::Int, j::Int) where n
+@inline function Base.setindex!(U::FTField{n}, val::Number, k::Int, j::Int) where {n}
     @boundscheck checkbounds(U, k, j)
     @inbounds U.data[KJtoI(k, j, n)] = rectify(val, j)
     val
@@ -56,29 +67,19 @@ end
     val
 end
 
-Base.unsafe_get(U::FTField) = U.data
+# accessors functions
+@inline Base.parent(U::FTField) = U.data
 
 # allow constructing similar fields. Used by IMEXRKCB to allocate storage.
-# TODO. allow, different, type and shape
-Base.similar(U::FTField) = FTField(zeros(U.data))
-
-# get/set perturbation for variational analysis. There is no
-# need for checks of FTField have same `n`
-VariationalNumbers.set_pert!(A::FTField{n, Complex{VarNum{T}}},
-                             p::FTField{n, Complex{T}}) where {n, T} =
-    (unsafe_set_pert!(A.data, p.data))
-
-VariationalNumbers.get_pert!(A::FTField{n, Complex{VarNum{T}}},
-                             p::FTField{n, Complex{T}}) where {n, T} =
-    (unsafe_get_pert!(A.data, p.data))
+Base.similar(U::FTField{n, T}, m::Int=n) where {n, T} = FTField(m, T)
 
 # ~~~ Copy one field to the other, e.g. for zero padding or truncation ~~~
 
 # same size is just a copy
-growto!(W::FTField{n}, U::FTField{n}) where {n} = W .= U
+@inline growto!(W::FTField{n}, U::FTField{n}) where {n} = W .= U
 
 # different size requires special handling of boundary terms
-function growto!(W::FTField{m}, U::FTField{n}) where {m, n}
+@inline function growto!(W::AbstractFTField{m}, U::AbstractFTField{n}) where {m, n}
     m >= n || throw(ArgumentError("output `W` should be larger or equal than input `U`"))
     @inbounds begin
         dU = n>>1
@@ -100,9 +101,9 @@ function growto!(W::FTField{m}, U::FTField{n}) where {m, n}
 end
 
 # same size is a copy
-shrinkto!(W::FTField{n}, U::FTField{n}) where {n} = W .= U
+@inline shrinkto!(W::AbstractFTField{n}, U::AbstractFTField{n}) where {n} = W .= U
 
-function shrinkto!(W::FTField{n}, U::FTField{m}) where {n, m}
+@inline function shrinkto!(W::AbstractFTField{n}, U::AbstractFTField{m}) where {n, m}
     m >= n || throw(ArgumentError("input `U` should be larger or equal than output `W`"))
     @inbounds begin
         dW = n>>1
