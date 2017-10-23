@@ -87,3 +87,16 @@ end
         @test IFFT(Uyy).data ≈  -β^2.*cc.*cos.(α.*x .+ β.*y) .- β^2.*cs.*sin.(α.*x .+ β.*y)
     end
 end
+
+@testset "inplace                                " begin
+    # size
+    n = 64
+
+    # get some data
+    data = randn(n, n); data .-= mean(data) 
+    U = FFT(Field(data)) 
+
+    # compare two methods
+    @test ∂x!(copy(U)) == DiffOperator(n, :x) .* U
+    @test ∂y!(copy(U)) == DiffOperator(n, :y) .* U
+end

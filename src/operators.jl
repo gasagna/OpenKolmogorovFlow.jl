@@ -1,4 +1,4 @@
-export DiffOperator
+export DiffOperator, ∂x!, ∂y!
 
 struct DiffOperator{n, T, M<:AbstractMatrix{T}} <: AbstractFTOperator{n, T}
     data::M
@@ -18,4 +18,26 @@ function DiffOperator(n::Int, i::Symbol, ::Type{T}=Float64) where {T<:Union{Abst
                                                                                   vcat(T[-k*k for k=      0:n>>1, j=0:n>>1],
                                                                                        T[-k*k for k=-n>>1+1:-1,   j=0:n>>1]))
     throw(ArgumentError("differentiation not understood, got $i"))
+end
+
+# In-place derivative operators
+# TODO: make smarter code 
+function ∂x!(U::FTField{n}) where {n}
+    d = n>>1
+    for j = 0:d
+        @simd for k = (-d+1):d
+            @inbounds U[k, j] *= im*j
+        end
+    end
+    U
+end
+
+function ∂y!(U::FTField{n}) where {n}
+    d = n>>1
+    for j = 0:d
+        @simd for k = (-d+1):d
+            @inbounds U[k, j] *= im*k
+        end
+    end
+    U
 end
