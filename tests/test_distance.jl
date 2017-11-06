@@ -145,7 +145,7 @@ end
     # proceed in time ahead
     Ω2 = f(deepcopy(Ω), 5.0)
 
-    # find shift and see if distance matches with the calculation using innerdiff
+    # find shift and see if distance matches with the calculation using dotdiff
     d, (s, m) = distance!(Ω, Ω2, cache)
-    @test abs(d - innerdiff(shifted(Ω, (s, m)), Ω2)) < 4e-9
+    @test abs(d - dotdiff(shifted(Ω, (s, m)), Ω2)) < 4e-9
 end

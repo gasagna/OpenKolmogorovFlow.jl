@@ -7,9 +7,9 @@ v = randn(n, n); V = FFT(Field(v))
 cache = DistanceCache(64)
 W = shifted(V, (1, 2))
 
-@btime inner($U, $V)
-@btime inner($U, $W)
+@btime dot($U, $V)
+@btime dot($U, $W)
 
-@btime innerdiff($U, $V)
-@btime innerdiff($U, $W)
+@btime dotdiff($U, $V)
+@btime dotdiff($U, $W)
 @btime distance!($U, $V, $cache)

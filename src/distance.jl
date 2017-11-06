@@ -27,7 +27,7 @@ among all possible continuous shift `s ∈ [0, 2π)` along the `x` direction and
 for discrete vertical shifts `m*π/4, m ∈ {0, 2, 4, 6}`. It returns the minimum
 distance `d` and the shifts `s` and `m`, such that
 
-julia> innerdiff(shift!(Ω₁, (s, m)), Ω₂) ≈ d
+julia> dotdiff(shift!(Ω₁, (s, m)), Ω₂) ≈ d
 
 where the equality holds approximately because different algorithms are used.
 This function exploits the correlation theorem to compute the optimal shift

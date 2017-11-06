@@ -147,6 +147,7 @@ end
 function (eq::VorticityEquation{n})(t::Real, Ω::FTField{n}, dΩdt::FTField{n}) where {n}
     A_mul_B!(dΩdt, eq.imTerm, Ω)
     eq.exTerm(t, Ω, dΩdt, true)
+    return dΩdt
 end
 
 # obtain two components

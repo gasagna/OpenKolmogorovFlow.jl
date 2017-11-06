@@ -1,7 +1,7 @@
 using OpenKolmogorovFlow
 using Base.Test
 
-@testset "inner product                          " begin
+@testset "dot product                           " begin
     x, y = make_grid(10)
 
     # tolerance on integrals
@@ -15,54 +15,54 @@ using Base.Test
         a, b = rand(), rand()
         u = a.*cos.(j.*x.+k.*y); U = FFT(Field(u))
         v = b.*cos.(j.*x.+k.*y); V = FFT(Field(v))
-        j == k == 0 || @test abs(inner(U, V) - a*b*2π^2) < TOL
+        j == k == 0 || @test abs(dot(U, V) - a*b*2π^2) < TOL
     end
 
     # these does not fit on the grid, so it is zero
     u = sin.(0.*x.+5.*y); U = FFT(Field(u))
     v = sin.(0.*x.+5.*y); V = FFT(Field(v))
-    @test abs(inner(U, V) - 0) < TOL
+    @test abs(dot(U, V) - 0) < TOL
 
     u = sin.(5.*x.+0.*y); U = FFT(Field(u))
     v = sin.(5.*x.+0.*y); V = FFT(Field(v))
-    @test abs(inner(U, V) - 0) < TOL
+    @test abs(dot(U, V) - 0) < TOL
 
     u = sin.(5.*x.+5.*y); U = FFT(Field(u))
     v = sin.(5.*x.+5.*y); V = FFT(Field(v))
-    @test abs(inner(U, V) - 0) < TOL
+    @test abs(dot(U, V) - 0) < TOL
 
-    # orthogonal fields have zero inner product
+    # orthogonal fields have zero dot product
     u = sin.(1.*x.+1.*y); U = FFT(Field(u))
     v = sin.(1.*x.+2.*y); V = FFT(Field(v))
-    @test abs(inner(U, V) -   0) < TOL
+    @test abs(dot(U, V) -   0) < TOL
 
     u = cos.(5.*x.+1.*y) .+ sin.(4.*x.+1.*y); U = FFT(Field(u))
     v = cos.(1.*x.+2.*y) .+ sin.(1.*x.+2.*y); V = FFT(Field(v))
-    @test abs(inner(U, V) -   0) < TOL
+    @test abs(dot(U, V) -   0) < TOL
 
     # count only what is not orthogonal
     u = cos.(1.*x.+0.*y) .+ sin.(1.*x.+1.*y); U = FFT(Field(u))
     v = cos.(1.*x.+0.*y) .+ sin.(1.*x.+2.*y); V = FFT(Field(v))
-    @test abs(inner(U, V) - 2π^2) < TOL
+    @test abs(dot(U, V) - 2π^2) < TOL
 
     u = cos.(1.*x.+0.*y) .+ sin.(1.*x.+1.*y); U = FFT(Field(u))
     v = cos.(1.*x.+0.*y) .+ sin.(1.*x.+1.*y); V = FFT(Field(v))
-    @test abs(inner(U, V) - 2*2π^2) < TOL
+    @test abs(dot(U, V) - 2*2π^2) < TOL
 
     u = cos.(1.*x.+5.*y) .+ sin.(1.*x.+5.*y); U = FFT(Field(u))
     v = cos.(1.*x.+5.*y) .+ sin.(1.*x.+5.*y); V = FFT(Field(v))
-    @test abs(inner(U, V) - 2*2π^2) < TOL
+    @test abs(dot(U, V) - 2*2π^2) < TOL
 
     u = 0.4*cos.(5.*x.+1.*y) + 0.4*sin.(5.*x.+2.*y); U = FFT(Field(u))
     v = 0.3*cos.(5.*x.+1.*y) + 0.3*sin.(5.*x.+2.*y); V = FFT(Field(v))
-    @test abs(inner(U, V) - 0.24*2π^2) < TOL
+    @test abs(dot(U, V) - 0.24*2π^2) < TOL
 end
 
-@testset "inner product performance              " begin
+@testset "dot product performance               " begin
     n = 100
     u = randn(n, n); U = FFT(Field(u))
     v = randn(n, n); V = FFT(Field(v))
-    @test minimum([@elapsed inner(U, V) for i = 1:100000]) < 4.1*10.0^(-6)
+    @test minimum([@elapsed dot(U, V) for i = 1:1000000]) < 4.5*10.0^(-6)
 end
 
 @testset "norm                                   " begin
@@ -89,14 +89,14 @@ end
 
     u = sin.(1.*x.+1.*y); U = FFT(Field(u))
     v = sin.(1.*x.+1.*y); V = FFT(Field(v))
-    @test innerdiff(U, V) == 0
+    @test dotdiff(U, V) == 0
 
     u = 2*sin.(1.*x.+1.*y); U = FFT(Field(u))
     v =   sin.(1.*x.+1.*y); V = FFT(Field(v))
-    @test innerdiff(U, V) == 2π^2
+    @test dotdiff(U, V) == 2π^2
 
     # corner case
     u = 2*sin.(5.*x.+1.*y); U = FFT(Field(u))
     v =   sin.(5.*x.+1.*y); V = FFT(Field(v))
-    @test innerdiff(U, V) == 2π^2
+    @test dotdiff(U, V) == 2π^2
 end

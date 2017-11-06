@@ -20,7 +20,7 @@ end
     Usin = FFT(Field(data))
 
     s, m = π/2, 0
-    @test abs(innerdiff(Usin, shifted(Ucos, (s, m)))) < 1e-20
+    @test abs(dotdiff(Usin, shifted(Ucos, (s, m)))) < 1e-20
 end
 
 @testset "do it up, by π/4                       " begin
@@ -33,7 +33,7 @@ end
     Usin = FFT(Field(data))
 
     s, m = 0, 1
-    @test abs(innerdiff(Usin, shifted(Ucos, (s, m)))) < 1e-20
+    @test abs(dotdiff(Usin, shifted(Ucos, (s, m)))) < 1e-20
 end
 
 @testset "shift by exact fraction of grid size   " begin

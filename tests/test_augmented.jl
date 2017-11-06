@@ -57,19 +57,19 @@ end
     @test norm(V) == 0 + 0*ε
 end
 
-@testset "norms/inners                           " begin
+@testset "norms/dots                           " begin
     n = 10
     x, y = make_grid(n)
 
     # state and prime are orthogonal, so result is real
     ux, up = Field(cos.(2x .+ 3y)), Field(sin.(3x .+ 4y))
     U = AugmentedFTField(FFT(ux), FFT(up)) 
-    @test inner(U, U) == 2*π^2 + 0*ε
+    @test dot(U, U) == 2*π^2 + 0*ε
 
     # state and prime are not orthogonal, so result contains a perturbation
     ux, up = Field(cos.(2x .+ 3y)), Field(cos.(2x .+ 3y))
     U = AugmentedFTField(FFT(ux), FFT(up)) 
-    @test inner(U, U) == 2*π^2 + 4*π^2*ε
+    @test dot(U, U) == 2*π^2 + 4*π^2*ε
 end
 
 @testset "transforms                             " begin
