@@ -17,7 +17,7 @@ using Base.Test
 
     for dealias in [true, false]
         # get explicit and implicit parts
-        L, N = imex(VorticityEquation(n, Re, kforcing; dealias=dealias))
+        L, N = imex(ForwardEquation(n, Re, kforcing; dealias=dealias))
 
         # for each integration scheme
         for impl in [IMEXRK3R2R(IMEXRKCB3c, false),
@@ -31,13 +31,13 @@ using Base.Test
             Ω₀ .= 0.01; Ω₀[0, 0] = 0
 
             # monitor the state excited by forcing
-            m = Monitor((Ω->Ω, ), Ω₀)
+            m = Monitor(Ω₀, Ω->Ω)
 
             # map forward
-            f(Ω₀, 50,  m)
+            f(Ω₀, (0, 50),  m)
 
             # test final value is that predicted by explicit equation
-            Δ = m.samples[1][end] .- laminarflow(n, Re, kforcing)
+            Δ = m.xs[end] .- laminarflow(n, Re, kforcing)
             @test maximum(abs, Δ) < 1e-15
         end
     end
