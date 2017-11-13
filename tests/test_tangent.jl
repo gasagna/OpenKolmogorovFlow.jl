@@ -19,7 +19,7 @@ using Base.Test
                      IMEXRK4R3R(IMEXRKCB4,  false)]
 
             # get explicit and implicit parts
-            L, N = imex(VorticityEquation(n, Re, kforcing; dealias=dealias))
+            L, N = imex(ForwardEquation(n, Re, kforcing; dealias=dealias))
 
             # define integrator
             f = integrator(N, L, IMEXRKScheme(impl, FTField(n, Complex{Float64})), 0.005)
@@ -32,16 +32,16 @@ using Base.Test
             # looking at the viscous decay of the high frequency modes.
             # After this Ω0 will be the initial condition for the simulation
             # of the variational equations.
-            f(Ω0_reference, 100)
+            f(Ω0_reference, (0, 100))
 
             # Now integrate in time the nonlinear equations
-            Ωf1 = f(copy(Ω0_reference), 10)
+            Ωf1 = f(copy(Ω0_reference), (0, 10))
 
             # now perturb Ω0 along a particular direction
             Ω0_reference[1, 1] += 1e-6
 
             # and integrate in time, for the same time span as before
-            Ωf2 = f(copy(Ω0_reference), 10)
+            Ωf2 = f(copy(Ω0_reference), (0, 10))
 
             # reset perturbation, so we can reuse the initial condition later
             Ω0_reference[1, 1] -= 1e-6
@@ -53,7 +53,7 @@ using Base.Test
             diff_nl = (Ωf2-Ωf1)/1e-6
 
             # Now define integration setup for variational equations
-            L, N = imex(VorticityEquation(n, Re, kforcing; mode=TangentMode(), dealias=dealias))
+            L, N = imex(ForwardEquation(n, Re, kforcing, TangentMode(); dealias=dealias))
             f = integrator(N, L, IMEXRKScheme(impl, AugmentedFTField(n)), 0.005)
 
             # define initial condition, using the previous one
@@ -68,7 +68,7 @@ using Base.Test
             Ω0[1, 1] += 0 + 1e-6*ε
 
             # integrate in time
-            Ωf1_var = f(copy(Ω0), 10)
+            Ωf1_var = f(copy(Ω0), (0, 10))
 
             # check that amplitude of mode (1, 1) of perturbation is similar
             # to the difference of two perturbed nonlinear simulations. We cannot

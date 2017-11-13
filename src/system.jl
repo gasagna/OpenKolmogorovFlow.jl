@@ -1,7 +1,16 @@
-export ForwardEquation, imex
+export ForwardEquation, imex, ForwardMode, TangentMode
+
+# solve either forward and variational equation or just the forward problem
+abstract type AbstractMode end
+abstract type AbstractForwardMode <: AbstractMode end
+abstract type AbstractTangentMode <: AbstractMode end
+
+# default tangent and forward modes
+struct ForwardMode <: AbstractForwardMode end
+struct TangentMode <: AbstractTangentMode end
 
 # ~~~ Explicit Term of Forward Equations ~~~
-struct ForwardExplicitTerm{n, FT<:FTField,             F<:Field,
+struct ForwardExplicitTerm{n, FT<:AbstractFTField,     F<:AbstractField,
                               D1<:AbstractFTOperator, D2<:AbstractFTOperator,
                              ITT<:InverseFFT!,       FTT<:ForwardFFT!}
      FTStore::Vector{FT} # storage
@@ -15,13 +24,17 @@ struct ForwardExplicitTerm{n, FT<:FTField,             F<:Field,
 end
 
 # Outer constructor: TODO: merge with above
-function ForwardExplicitTerm(n::Int, m::Int, kforcing::Int, ::Type{S}, flags::UInt32) where {S}
+function ForwardExplicitTerm(n::Int, m::Int, kforcing::Int, mode::M, ::Type{S}, flags::UInt32) where {S, M<:AbstractMode}
     # stupidity check
     m ≥ n || throw(ArgumentError("`m` must be bigger than `n`, got `n, m= $n, $m`. Are you sure?"))
 
+    # get appropriate constructor and eltype
+    CT, C = M <: AbstractTangentMode ? (AugmentedFTField, AugmentedField) : (FTField,    Field)
+    ET, E = M <: AbstractTangentMode ? (Dual{Complex{S}}, Dual{S})        : (Complex{S}, S)
+
     # complex fields have size `n` but real fields might have larger size `m`
-    FTStore = [FTField(n, Complex{S}) for i = 1:4]
-    FStore  = [  Field(m, S)          for i = 1:4]
+    FTStore = [CT(n, ET) for i = 1:4]
+    FStore  = [ C(m, E)  for i = 1:4]
 
     # transforms
     ifft! = InverseFFT!(m, FTStore[1], flags)
@@ -36,7 +49,7 @@ function ForwardExplicitTerm(n::Int, m::Int, kforcing::Int, ::Type{S}, flags::UI
 end
 
 # Adhere to callable interface for IMEXRKCB
-function (Eq::ForwardExplicitTerm{n, FT})(t::Real, Ω::FT, dΩdt::FT, add::Bool=false) where {n, FT<:FTField{n}}
+function (Eq::ForwardExplicitTerm{n, FT})(t::Real, Ω::FT, dΩdt::FT, add::Bool=false) where {n, FT<:AbstractFTField{n}}
     # extract aliases
     dΩdx, dΩdy, U, V = Eq.FTStore[1], Eq.FTStore[2], Eq.FTStore[3], Eq.FTStore[4]
     dωdx, dωdy, u, v = Eq.FStore[1],  Eq.FStore[2],  Eq.FStore[3],  Eq.FStore[4]
@@ -82,14 +95,15 @@ end
 # outer constructor: main entry point
 function ForwardEquation(n::Int,
                          Re::Real,
-                         kforcing::Int=4;
+                         kforcing::Int=4,
+                         mode::AbstractMode=ForwardMode();
                          numtype::Type{S}=Float64,
                          flags::UInt32=FFTW.PATIENT,
                          dealias::Bool=true) where {S<:Real}
     iseven(n) || throw(ArgumentError("`n` must be even, got $n"))
     m = dealias == true ? even_dealias_size(n) : n
     imTerm = ImplicitTerm(n, Re, S)
-    exTerm = ForwardExplicitTerm(n, m, kforcing, S, flags)
+    exTerm = ForwardExplicitTerm(n, m, kforcing, mode, S, flags)
     ForwardEquation{n, typeof(imTerm), typeof(exTerm)}(imTerm, exTerm)
 end
 
