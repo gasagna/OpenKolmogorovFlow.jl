@@ -30,11 +30,11 @@ function ForwardExplicitTerm(n::Int, m::Int, kforcing::Int, mode::M, ::Type{S}, 
 
     # get appropriate constructor and eltype
     CT, C = M <: AbstractTangentMode ? (VariationalFTField, VariationalField) : (FTField,    Field)
-    ET, E = M <: AbstractTangentMode ? (Dual{Complex{S}}, Dual{S})        : (Complex{S}, S)
+    ET, E = M <: AbstractTangentMode ? (Dual{Complex{S}},   Dual{S})          : (Complex{S}, S)
 
     # complex fields have size `n` but real fields might have larger size `m`
     FTFStore = [CT(n, ET) for i = 1:4]
-    FStore  = [ C(m, E)  for i = 1:4]
+    FStore   = [ C(m, E)  for i = 1:4]
 
     # transforms
     ifft! = InverseFFT!(m, FTFStore[1], flags)
