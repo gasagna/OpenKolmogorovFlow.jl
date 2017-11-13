@@ -13,7 +13,7 @@ struct TangentMode <: AbstractTangentMode end
 struct ForwardExplicitTerm{n, FT<:AbstractFTField,     F<:AbstractField,
                               D1<:AbstractFTOperator, D2<:AbstractFTOperator,
                              ITT<:InverseFFT!,       FTT<:ForwardFFT!}
-     FTStore::Vector{FT} # storage
+     FTFStore::Vector{FT} # storage
       FStore::Vector{F}
           dx::D1         # operators
           dy::D1
@@ -29,30 +29,30 @@ function ForwardExplicitTerm(n::Int, m::Int, kforcing::Int, mode::M, ::Type{S}, 
     m ≥ n || throw(ArgumentError("`m` must be bigger than `n`, got `n, m= $n, $m`. Are you sure?"))
 
     # get appropriate constructor and eltype
-    CT, C = M <: AbstractTangentMode ? (AugmentedFTField, AugmentedField) : (FTField,    Field)
+    CT, C = M <: AbstractTangentMode ? (VariationalFTField, VariationalField) : (FTField,    Field)
     ET, E = M <: AbstractTangentMode ? (Dual{Complex{S}}, Dual{S})        : (Complex{S}, S)
 
     # complex fields have size `n` but real fields might have larger size `m`
-    FTStore = [CT(n, ET) for i = 1:4]
+    FTFStore = [CT(n, ET) for i = 1:4]
     FStore  = [ C(m, E)  for i = 1:4]
 
     # transforms
-    ifft! = InverseFFT!(m, FTStore[1], flags)
+    ifft! = InverseFFT!(m, FTFStore[1], flags)
      fft! = ForwardFFT!(n,  FStore[1], flags)
 
     # operators
     dx, dy, Δ = DiffOperator(n, :x, S), DiffOperator(n, :y, S), DiffOperator(n, :xxyy, S)
 
     # construct object
-    ForwardExplicitTerm{n, eltype(FTStore), eltype(FStore), typeof(dx), typeof(Δ), 
-                 typeof(ifft!), typeof(fft!)}(FTStore, FStore, dx, dy, Δ, ifft!, fft!, kforcing)
+    ForwardExplicitTerm{n, eltype(FTFStore), eltype(FStore), typeof(dx), typeof(Δ), 
+                 typeof(ifft!), typeof(fft!)}(FTFStore, FStore, dx, dy, Δ, ifft!, fft!, kforcing)
 end
 
 # Adhere to callable interface for IMEXRKCB
 function (Eq::ForwardExplicitTerm{n, FT})(t::Real, Ω::FT, dΩdt::FT, add::Bool=false) where {n, FT<:AbstractFTField{n}}
     # extract aliases
-    dΩdx, dΩdy, U, V = Eq.FTStore[1], Eq.FTStore[2], Eq.FTStore[3], Eq.FTStore[4]
-    dωdx, dωdy, u, v = Eq.FStore[1],  Eq.FStore[2],  Eq.FStore[3],  Eq.FStore[4]
+    dΩdx, dΩdy, U, V = Eq.FTFStore[1], Eq.FTFStore[2], Eq.FTFStore[3], Eq.FTFStore[4]
+    dωdx, dωdy, u, v = Eq.FStore[1],   Eq.FStore[2],   Eq.FStore[3],   Eq.FStore[4]
     dx, dy, Δ = Eq.dx, Eq.dy, Eq.Δ
 
     # set mean to zero

@@ -104,13 +104,13 @@ end
     RK = IMEXRKScheme(IMEXRK3R2R(IMEXRKCB3e, false), Ω)
 
     # Get system
-    L, N = imex(VorticityEquation(n, Re; dealias=true))
+    L, N = imex(ForwardEquation(n, Re; dealias=true))
 
     # forward map
     f  = integrator(N, L, RK,  Δt)
 
     # run forward to get to steady state
-    f(Ω, 100)
+    f(Ω, (0, 100))
 
     # distance cache
     cache = DistanceCache(64)
@@ -143,7 +143,7 @@ end
     end
 
     # proceed in time ahead
-    Ω2 = f(deepcopy(Ω), 5.0)
+    Ω2 = f(deepcopy(Ω), (0, 5))
 
     # find shift and see if distance matches with the calculation using innerdiff
     d, (s, m) = distance!(Ω, Ω2, cache)

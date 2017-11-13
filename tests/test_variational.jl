@@ -7,7 +7,7 @@ using DualNumbers
     x, y = make_grid(n)
     @testset "laplacian                          " begin
         ux, up = Field(cos.(2x .+ 3y)), Field(sin.(3x .+ 4y))
-        Ux, Up = FFT(ux), FFT(up); U = AugmentedFTField(Ux, Up); V = similar(U)
+        Ux, Up = FFT(ux), FFT(up); U = VariationalFTField(Ux, Up); V = similar(U)
         Δ = OpenKolmogorovFlow.ImplicitTerm(n, 1, Float64)
 
         V  .= Δ .* U
@@ -16,7 +16,7 @@ using DualNumbers
     end
     @testset "dx/dy                                 " begin
         ux, up = Field(cos.(2x .+ 3y) + sin.(x .+ y)), Field(sin.(3x .+ 4y) .+ cos.(3x .+ 4y))
-        Ux, Up = FFT(ux), FFT(up); U = AugmentedFTField(Ux, Up); V = similar(U)
+        Ux, Up = FFT(ux), FFT(up); U = VariationalFTField(Ux, Up); V = similar(U)
         ∂x = OpenKolmogorovFlow.DiffOperator(n, :x)
         ∂y = OpenKolmogorovFlow.DiffOperator(n, :y)
 
@@ -30,16 +30,16 @@ using DualNumbers
 end
 
 @testset "eltypes                                " begin
-    @test eltype(AugmentedFTField(4))        == Dual{Complex{Float64}}
+    @test eltype(VariationalFTField(4))        == Dual{Complex{Float64}}
     @test eltype(FTField(4))                 == Complex{Float64}
 
-    @test eltype(AugmentedField(4))          == Dual{Float64}
+    @test eltype(VariationalField(4))          == Dual{Float64}
     @test eltype(Field(4))                   == Float64
 
-    @test eltype(AugmentedFTField(4, Dual{Complex{Int64}})) == Dual{Complex{Int64}}
+    @test eltype(VariationalFTField(4, Dual{Complex{Int64}})) == Dual{Complex{Int64}}
     @test eltype(FTField(4, Complex{Int64}))                == Complex{Int64}
 
-    @test eltype(AugmentedField(4, Dual{Int64}))   == Dual{Int64}
+    @test eltype(VariationalField(4, Dual{Int64}))   == Dual{Int64}
     @test eltype(Field(4, Int64))                  == Int64
 end 
 
@@ -47,8 +47,8 @@ end
     n = 10
     x, y = make_grid(n)
     ux, up = Field(cos.(2x .+ 3y)), Field(sin.(3x .+ 4y))
-    Ux, Up = FFT(ux), FFT(up); U = AugmentedFTField(Ux, Up); 
-    V = AugmentedFTField(n)
+    Ux, Up = FFT(ux), FFT(up); U = VariationalFTField(Ux, Up); 
+    V = VariationalFTField(n)
 
     # set to zero
     V .= zero(eltype(V))
@@ -63,12 +63,12 @@ end
 
     # state and prime are orthogonal, so result is real
     ux, up = Field(cos.(2x .+ 3y)), Field(sin.(3x .+ 4y))
-    U = AugmentedFTField(FFT(ux), FFT(up)) 
+    U = VariationalFTField(FFT(ux), FFT(up)) 
     @test inner(U, U) == 2*π^2 + 0*ε
 
     # state and prime are not orthogonal, so result contains a perturbation
     ux, up = Field(cos.(2x .+ 3y)), Field(cos.(2x .+ 3y))
-    U = AugmentedFTField(FFT(ux), FFT(up)) 
+    U = VariationalFTField(FFT(ux), FFT(up)) 
     @test inner(U, U) == 2*π^2 + 4*π^2*ε
 end
 
@@ -77,7 +77,7 @@ end
     x, y = make_grid(n)
 
     # define field
-    u = AugmentedField(Field(cos.(2x .+ 3y)), Field(sin.(3x .+ 4y)))
+    u = VariationalField(Field(cos.(2x .+ 3y)), Field(sin.(3x .+ 4y)))
 
     # transform
     U = FFT(u)

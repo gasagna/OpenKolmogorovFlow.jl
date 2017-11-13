@@ -1,15 +1,15 @@
 import DualNumbers: Dual, value, epsilon
 
-export AugmentedFTField, AugmentedField, state, prime
+export VariationalFTField, VariationalField, state, prime
 
 # ~~ VERSIONS OF FTFIELD AND FIELD WITH PERTURBATION OR ADJOINT VARIABLE ~~~
 for (FT, numtype) in [(:FTField, Complex), (:Field, Real)]
-    typename = Symbol(:Augmented, FT)
+    typename = Symbol(:Variational, FT)
     abstractname = Symbol(:Abstract, FT)
     @eval begin
         # this is not the strictest typing but can't do otherwise
-        # struct AugmentedFTField{n, T<:Dual{<:Complex}, F<:FTField{n, <:Complex}} <: AbstractFTField{n, T}
-        # struct AugmentedField{n,   T<:Dual{<:Real},    F<:Field{n,   <:Real}}    <: AbstractField{n, T}
+        # struct VariationalFTField{n, T<:Dual{<:Complex}, F<:FTField{n, <:Complex}} <: AbstractFTField{n, T}
+        # struct VariationalField{n,   T<:Dual{<:Real},    F<:Field{n,   <:Real}}    <: AbstractField{n, T}
         struct $typename{n, T<:Dual{<:$numtype}, F<:$FT{n, <:$numtype}} <: $abstractname{n, T}
             x::F # state
             p::F # perturbation

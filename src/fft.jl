@@ -8,8 +8,8 @@ export FFT, IFFT, ForwardFFT!, InverseFFT!, even_dealias_size
 # application of FFT or inverse FFT on the input type `u`
 _oftransftype(u::Field{m, T}, n::Int=m)                           where {m, T} = FTField(n, Complex{T})
 _oftransftype(u::FTField{m, Complex{T}}, n::Int=m)                where {m, T} = Field(n, T)
-_oftransftype(u::AugmentedField{m, Dual{T}}, n::Int=m)            where {m, T} = AugmentedFTField(n, Dual{Complex{T}})
-_oftransftype(u::AugmentedFTField{m, Dual{Complex{T}}}, n::Int=m) where {m, T} = AugmentedField(n, Dual{T})
+_oftransftype(u::VariationalField{m, Dual{T}}, n::Int=m)            where {m, T} = VariationalFTField(n, Dual{Complex{T}})
+_oftransftype(u::VariationalFTField{m, Dual{Complex{T}}}, n::Int=m) where {m, T} = VariationalField(n, Dual{T})
 
 # Return next even number.
 _next_even(n::Int) = ifelse(iseven(n), n, n+1)
@@ -46,7 +46,7 @@ ForwardFFT!(n::Int, u::AbstractField{m}, flags::UInt32=FFTW.PATIENT) where {m} =
 (f::ForwardFFT!{m})(U::FTField{m}, u::Field{m}) where {m} =
     (unsafe_execute!(f.plan, parent(u), parent(U)); U .*= 1/m^2; U)
 
-(f::ForwardFFT!{m})(U::AugmentedFTField{m}, u::AugmentedField{m}) where {m} =
+(f::ForwardFFT!{m})(U::VariationalFTField{m}, u::VariationalField{m}) where {m} =
     (unsafe_execute!(f.plan, parent(state(u)), parent(state(U)));
      unsafe_execute!(f.plan, parent(prime(u)), parent(prime(U))); U .*= 1/m^2; U)
 
@@ -74,7 +74,7 @@ end
     (unsafe_execute!(i.plan, parent(state(U)), parent(state(u))); return u)
 
 # Keep this in mind: FFT(U+ε*u) = FFT(U) + ε*FFT(u)
-@inline (i::InverseFFT!{m})(u::AugmentedField{m}, U::AugmentedFTField{m}) where {m} =
+@inline (i::InverseFFT!{m})(u::VariationalField{m}, U::VariationalFTField{m}) where {m} =
     (unsafe_execute!(i.plan, parent(state(U)), parent(state(u)));
      unsafe_execute!(i.plan, parent(prime(U)), parent(prime(u))); return u)
 

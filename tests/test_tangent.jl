@@ -54,10 +54,10 @@ using Base.Test
 
             # Now define integration setup for variational equations
             L, N = imex(ForwardEquation(n, Re, kforcing, TangentMode(); dealias=dealias))
-            f = integrator(N, L, IMEXRKScheme(impl, AugmentedFTField(n)), 0.005)
+            f = integrator(N, L, IMEXRKScheme(impl, VariationalFTField(n)), 0.005)
 
             # define initial condition, using the previous one
-            Ω0 = AugmentedFTField(Ω0_reference, FTField(n))
+            Ω0 = VariationalFTField(Ω0_reference, FTField(n))
 
             # perturb mode (1, 1), by the same amount as in the nonlinear
             # simulation. The perturbation size does not matter, because
