@@ -4,15 +4,15 @@ export AdjointEquation, imex
 struct AdjointExplicitTerm{n, FT<:AbstractFTField,    F<:AbstractField,
                               D1<:AbstractFTOperator, D2<:AbstractFTOperator,
                              ITT<:InverseFFT!,       FTT<:ForwardFFT!, S, C}
-    FTStore::Vector{FT} # storage
-     FStore::Vector{F}
-         dx::D1         # operators
-         dy::D1
-          Δ::D2
-      ifft!::ITT        # transforms
-       fft!::FTT
-        sol::S          # forward solution storage
-       cost::C          # cost gradient function
+    FTFStore::Vector{FT} # storage
+      FStore::Vector{F}
+          dx::D1         # operators
+          dy::D1
+           Δ::D2
+       ifft!::ITT        # transforms
+        fft!::FTT
+         sol::S          # forward solution storage
+        cost::C          # cost gradient function
 end
 
 # Outer constructor: TODO: merge with above
@@ -21,41 +21,41 @@ function AdjointExplicitTerm(n::Int, m::Int, sol, cost, ::Type{S}, flags::UInt32
     m ≥ n || throw(ArgumentError("`m` must be bigger than `n`, got `n, m= $n, $m`. Are you sure?"))
 
     # complex fields have size `n` but real fields might have larger size `m`
-    FTStore = [FTField(n, Complex{S}) for i = 1:7]
-    FStore  = [  Field(m, S)          for i = 1:6]
+    FTFStore = [FTField(n, Complex{S}) for i = 1:7]
+    FStore   = [  Field(m, S)          for i = 1:6]
 
     # transforms
-    ifft! = InverseFFT!(m, FTStore[1], flags)
-     fft! = ForwardFFT!(n,  FStore[1], flags)
+    ifft! = InverseFFT!(m, FTFStore[1], flags)
+     fft! = ForwardFFT!(n,   FStore[1], flags)
 
     # operators
     dx, dy, Δ = DiffOperator(n, :x, S), DiffOperator(n, :y, S), DiffOperator(n, :xxyy, S)
 
     # construct object
     AdjointExplicitTerm{n, 
-                        eltype(FTStore), 
+                        eltype(FTFStore), 
                         eltype(FStore), 
                         typeof(dx), 
                         typeof(Δ), 
                         typeof(ifft!), 
                         typeof(fft!), 
                         typeof(sol), 
-                        typeof(cost)}(FTStore, FStore, dx, dy, Δ, ifft!, fft!, sol, cost)
+                        typeof(cost)}(FTFStore, FStore, dx, dy, Δ, ifft!, fft!, sol, cost)
 end
 
 # extract forward solution at current time
 (Eq::AdjointExplicitTerm{n, FT})(t::Real, Λ::FT, dΛdt::FT, add::Bool=false) where {n, FT<:FTField{n}} = 
-    Eq(t, Eq.sol(Eq.FTStore[1], t), Λ, dΛdt)
+    Eq(t, Eq.sol(Eq.FTFStore[1], t), Λ, dΛdt)
 
 # Adhere to callable interface for IMEXRKCB
 function (Eq::AdjointExplicitTerm{n, FT})(t::Real, Ω::FT, Λ::FT, dΛdt::FT, add::Bool=false) where {n, FT<:FTField{n}}
     # extract aliases. We start from one because 1 might be taken for Ω
-                U,    V    = Eq.FTStore[2], Eq.FTStore[3]
-                TMP1, TMP2 = Eq.FTStore[2], Eq.FTStore[3]
-    dΛdx, dΛdy, dΩdx, dΩdy = Eq.FTStore[4], Eq.FTStore[5], Eq.FTStore[6], Eq.FTStore[7] 
-                u,    v    = Eq.FStore[1],  Eq.FStore[2]
-                tmp1, tmp2 = Eq.FStore[1],  Eq.FStore[2]
-    dλdx, dλdy, dωdx, dωdy = Eq.FStore[3],  Eq.FStore[4],  Eq.FStore[5],  Eq.FStore[6]
+                U,    V    = Eq.FTFStore[2], Eq.FTFStore[3]
+                TMP1, TMP2 = Eq.FTFStore[2], Eq.FTFStore[3]
+    dΛdx, dΛdy, dΩdx, dΩdy = Eq.FTFStore[4], Eq.FTFStore[5], Eq.FTFStore[6], Eq.FTFStore[7] 
+                u,    v    = Eq.FStore[1],   Eq.FStore[2]
+                tmp1, tmp2 = Eq.FStore[1],   Eq.FStore[2]
+    dλdx, dλdy, dωdx, dωdy = Eq.FStore[3],   Eq.FStore[4],   Eq.FStore[5],   Eq.FStore[6]
     dx, dy, Δ = Eq.dx, Eq.dy, Eq.Δ
 
     # set mean to zero

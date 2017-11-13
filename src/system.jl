@@ -13,7 +13,7 @@ struct TangentMode <: AbstractTangentMode end
 struct ForwardExplicitTerm{n, FT<:AbstractFTField,     F<:AbstractField,
                               D1<:AbstractFTOperator, D2<:AbstractFTOperator,
                              ITT<:InverseFFT!,       FTT<:ForwardFFT!}
-     FTFStore::Vector{FT} # storage
+    FTFStore::Vector{FT} # storage
       FStore::Vector{F}
           dx::D1         # operators
           dy::D1
