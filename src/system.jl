@@ -63,8 +63,8 @@ function (Eq::ForwardExplicitTerm{n, FT})(t::Real, Ω::FT, dΩdt::FT, add::Bool=
     dΩdy .= dy .* Ω
 
     # obtain velocity components. Set mean to zero.
-    U .= .- dΩdy ./ Δ; U[0, 0] = zero(eltype(Ω))
-    V .=    dΩdx ./ Δ; V[0, 0] = zero(eltype(Ω))
+    U .= .- dΩdy ./ Δ; U[0, 0] = zero(eltype(U))
+    V .=    dΩdx ./ Δ; V[0, 0] = zero(eltype(V))
 
     # inverse transform to physical space into temporaries
     Eq.ifft!(u,    U)
