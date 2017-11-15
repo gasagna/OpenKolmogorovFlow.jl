@@ -81,7 +81,8 @@ function (Eq::AdjointExplicitTerm{n, FT})(t::Real, Ω::FT, Λ::FT, dΛdt::FT, ad
     tmp1 .= u.*dλdx .+ v.*dλdy;       Eq.fft!(TMP1, tmp1)
     tmp2 .= dλdx.*dωdy .- dλdy.*dωdx; Eq.fft!(TMP2, tmp2)
     add == true ? (dΛdt .+= .- TMP1 .- TMP2 ./ Δ) : (dΛdt  .= .- TMP1 .- TMP2 ./ Δ)
-
+    dΛdt[0, 0] = zero(eltype(Λ))
+    
     # add forcing from cost gradient
     Eq.cost(dΛdt, Ω)
 
