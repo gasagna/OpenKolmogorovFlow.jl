@@ -56,7 +56,7 @@ using Base.Test
             f_forw(Ω, (0, T), forw_sol);
 
             # calculate 
-            LHS = inner(state(Ω), prime(Ω)) 
+            LHS = dot(state(Ω), prime(Ω)) 
 
             # ~~~ ADJOINT ~~~
             cost(dΛdt::FTField, Ω::FTField) = nothing
@@ -74,7 +74,7 @@ using Base.Test
             f_back(Ωs, (T, 0), mon);
 
             # calculate 
-            RHS = inner(Ωs, Ωp)
+            RHS = dot(Ωs, Ωp)
 
             Δ = abs(LHS - RHS)/abs(RHS)
             @test Δ < 1e-6
