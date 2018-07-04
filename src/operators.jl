@@ -1,21 +1,41 @@
-export DiffOperator
-
-struct DiffOperator{n, T, M<:AbstractMatrix{T}} <: AbstractFTOperator{n, T}
-    data::M
+function ddx!(OUT::FTField{n, m}, U::FTField{n, m}) where {n, m}
+    for j = 0:n, k = -n:n
+        kk, jj = _reindex(k, j, m)
+        @inbounds OUT[kk, jj] = im*j*U[kk, jj]
+    end
+    return OUT
 end
 
-# read only
-Base.@propagate_inbounds @inline Base.getindex(d::DiffOperator, i::Int) = d.data[i]
+function ddy!(OUT::FTField{n, m}, U::FTField{n, m}) where {n, m}
+    for j = 0:n, k = -n:n
+        kk, jj = _reindex(k, j, m)
+        @inbounds OUT[kk, jj] = im*k*U[kk, jj]
+    end
+    return OUT
+end
 
-function DiffOperator(n::Int, i::Symbol, ::Type{T}=Float64) where {T<:Union{AbstractFloat, Integer}}
-    i == :x    && return DiffOperator{n, Complex{T}, Matrix{Complex{T}}}(     Complex{T}[im*j for k=      1:n,    j=0:n>>1])
-    i == :y    && return DiffOperator{n, Complex{T}, Matrix{Complex{T}}}(vcat(Complex{T}[im*k for k=      0:n>>1, j=0:n>>1],
-                                                                              Complex{T}[im*k for k=-n>>1+1:-1,   j=0:n>>1]))
-    i == :xx   && return DiffOperator{n, T, Matrix{T}}(                                T[-j*j for k=      1:n,    j=0:n>>1])
-    i == :yy   && return DiffOperator{n, T, Matrix{T}}(                           vcat(T[-k*k for k=      0:n>>1, j=0:n>>1],
-                                                                                       T[-k*k for k=-n>>1+1:-1,   j=0:n>>1]))
-    i == :xxyy && return DiffOperator{n, T, Matrix{T}}(                                T[-j*j for k=      1:n,    j=0:n>>1] +
-                                                                                  vcat(T[-k*k for k=      0:n>>1, j=0:n>>1],
-                                                                                       T[-k*k for k=-n>>1+1:-1,   j=0:n>>1]))
-    throw(ArgumentError("differentiation not understood, got $i"))
+function invlaplacian!(OUT::FTField{n, m}, U::FTField{n, m}) where {n, m}
+    for j = 0:n, k = -n:n
+        kk, jj = _reindex(k, j, m)
+        @inbounds OUT[kk, jj] = -U[kk, jj]/(j^2 + k^2)
+    end
+    @inbounds OUT[0, 0] = 0
+    return OUT
+end
+
+function invlaplacian!(OUT::FTField{n, m}, U::FTField{n, m}, c::Real) where {n, m}
+    for j = 0:n, k = -n:n
+        kk, jj = _reindex(k, j, m)
+        @inbounds OUT[kk, jj] = U[kk, jj]/(1 + c*(j^2 + k^2))
+    end
+    @inbounds OUT[0, 0] = 0
+    return OUT
+end
+
+function laplacian!(OUT::FTField{n, m}, U::FTField{n, m}) where {n, m}
+    for j = 0:n, k = -n:n
+        kk, jj = _reindex(k, j, m)
+        @inbounds OUT[kk, jj] = -U[kk, jj]*(j^2 + k^2)
+    end
+    return OUT
 end
