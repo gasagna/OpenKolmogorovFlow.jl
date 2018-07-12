@@ -123,6 +123,3 @@ function splitexim(eq::TangentEquation{n, m}) where {n, m}
     end
     return wrapper, eq.imTerm
 end
-
-
-
