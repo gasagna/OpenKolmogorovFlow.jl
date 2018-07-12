@@ -1,4 +1,4 @@
-import Base.FFTW: unsafe_execute!, plan_rfft, plan_brfft
+import FFTW: unsafe_execute!, plan_rfft, plan_brfft
 
 export FFT, IFFT, ForwardFFT!, InverseFFT!, up_dealias_size, down_dealias_size
 

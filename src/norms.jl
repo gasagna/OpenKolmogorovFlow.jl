@@ -1,8 +1,10 @@
+import LinearAlgebra: dot, norm
+
 # Definitions of inner products, norms and distances
 export dotdiff
 
 # Inner product between two vorticity fields (Ω₁, Ω₂)
-function Base.dot(Ω₁::AbstractFTField{n, m}, Ω₂::AbstractFTField{n, m}) where {n, m}
+function dot(Ω₁::AbstractFTField{n, m}, Ω₂::AbstractFTField{n, m}) where {n, m}
     s = real(Ω₁[_reindex(0, 0, m)...]*conj(Ω₂[_reindex(0, 0, m)...]))
     @inbounds for j = 1:n, k=-n:n
         kk, jj = _reindex(k, j, m)
@@ -31,6 +33,6 @@ function dotdiff(Ω₁::AbstractFTField{n, m}, Ω₂::AbstractFTField{n, m}) whe
 end
 
 # The two norm of a field ||Ω|| = sqrt(inner(Ω, Ω))
-Base.norm(Ω::AbstractFTField, n::Int=2) =
+norm(Ω::AbstractFTField, n::Int=2) =
     (n==2 || throw(ArgumentError("only the 2-norm is defined"));
     sqrt(dot(Ω, Ω)))
