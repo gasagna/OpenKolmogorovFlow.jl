@@ -1,5 +1,5 @@
 using OpenKolmogorovFlow
-using Base.Test
+using Test
 
 @testset "Constructors                           " begin
     # provide wave numbers
@@ -27,23 +27,17 @@ end
                 3-4im 15+16im 0+0im]
         U = FTField(data, 1)
 
-        # index over underlying data
-        for i = 1:4, j = 1:3
-            @test U[i, j] == parent(U)[i, j]
-        end
-        @test_throws BoundsError U[0, 0]
-
-        # test wavenumbers
-        @test U[( 0, 0)] ==  1+2im
-        @test U[( 1, 0)] ==  3+4im
-        @test U[(-1, 0)] ==  3-4im
-        @test U[(-1, 1)] == 15+16im
-        @test U[( 1, 1)] == 11+12im
-        @test U[( 0, 1)] ==  9+10im
+        # test indexing
+        @test U[ 0, 0] ==  1+2im
+        @test U[ 1, 0] ==  3+4im
+        @test U[-1, 0] ==  3-4im
+        @test U[-1, 1] == 15+16im
+        @test U[ 1, 1] == 11+12im
+        @test U[ 0, 1] ==  9+10im
         
-        @test_throws BoundsError U[(0, -1)]
-        @test_throws BoundsError U[(1, -1)]
-        @test_throws BoundsError U[(4,  0)]
+        @test_throws BoundsError U[0, -1]
+        @test_throws BoundsError U[1, -1]
+        @test_throws BoundsError U[4,  0]
 
         # linear indexing
         @test U[1] == 1+2im
@@ -58,24 +52,17 @@ end
                 3-4im 15+16im 0+0im]
         U = FTField(data, 1)
 
-        # index over underlying data
-        for i = 1:4, j = 1:3
-            U[i, j] = i+j + (i-j)*im
-            @test parent(U)[i, j] == i+j + (i-j)*im
-        end
-        @test_throws BoundsError U[0, 0] = 0
-
-        # test wavenumbers
-        U[( 0, 0)] =  (1+2im)*2;   @test U[( 0, 0)] == ( 1+2im)*2
-        U[( 1, 0)] =  (3+4im)*2;   @test U[( 1, 0)] == ( 3+4im)*2
-        U[(-1, 0)] =  (3-4im)*2;   @test U[(-1, 0)] == ( 3-4im)*2
-        U[(-1, 1)] = (15+16im)*2;  @test U[(-1, 1)] == (15+16im)*2
-        U[( 1, 1)] = (11+12im)*2;  @test U[( 1, 1)] == (11+12im)*2
-        U[( 0, 1)] =  (9+10im)*2;  @test U[( 0, 1)] == ( 9+10im)*2
+        # test indexing
+        U[ 0, 0] =  (1+2im)*2;   @test U[ 0, 0] == ( 1+2im)*2
+        U[ 1, 0] =  (3+4im)*2;   @test U[ 1, 0] == ( 3+4im)*2
+        U[-1, 0] =  (3-4im)*2;   @test U[-1, 0] == ( 3-4im)*2
+        U[-1, 1] = (15+16im)*2;  @test U[-1, 1] == (15+16im)*2
+        U[ 1, 1] = (11+12im)*2;  @test U[ 1, 1] == (11+12im)*2
+        U[ 0, 1] =  (9+10im)*2;  @test U[ 0, 1] == ( 9+10im)*2
         
-        @test_throws BoundsError U[(0, -1)] == 1
-        @test_throws BoundsError U[(1, -1)] == 1
-        @test_throws BoundsError U[(4,  0)] == 1
+        @test_throws BoundsError U[0, -1] == 1
+        @test_throws BoundsError U[1, -1] == 1
+        @test_throws BoundsError U[4,  0] == 1
 
         # linear indexing
         U[1] = 2*(1+2im); @test U[1] == 2*(1+2im)
@@ -85,9 +72,9 @@ end
 end
 
 @testset "similar/copy                           " begin
-    U = FTField(1, 2); U[(0, 0)] = 1+2im
+    U = FTField(1, 2); U[0, 0] = 1+2im
     V = similar(U)
     W = copy(U)
     @test typeof(V) == FTField{1, 2, Float64, Matrix{Complex{Float64}}}
-    @test W[(0, 0)] == 1+2im
+    @test W[0, 0] == 1+2im
 end

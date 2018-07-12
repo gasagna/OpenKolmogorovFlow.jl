@@ -1,5 +1,5 @@
-# Transform the wave number (k, j) into row, column positions
-@inline _reindex(k::Int, j::Int, m::Int) = (ifelse(k≥0, k+1, 2m+3+k), j+1)
+# Transform the wave number k into a row position
+@inline _reindex(k::Int, m::Int) = ifelse(k≥0, k+1, 2m+3+k)
 
 
 # # Location 'i' of wave number vector  (`k`, `j`), for a grid with `2m+2` points.

@@ -12,7 +12,7 @@ export AbstractFTField,
 # represented by the underlying data.
 abstract type AbstractFTField{n, m, T<:Real} <: AbstractMatrix{Complex{T}} end
 
-Base.size(::AbstractFTField{n, m}) where {n, m} = (2m+2, m+2)
+Base.axes(::AbstractFTField{n}) where {n} = (-n:n, 0:n)
 Base.IndexStyle(::Type{<:AbstractFTField}) = IndexLinear()
 
 # ~~~ MAIN TYPE ~~~
@@ -47,36 +47,16 @@ function _checksize(data::AbstractMatrix{<:Complex})
 end
 
 # ~~~ array interface ~~~
-# Indexing over the underlying data
 @inline function Base.getindex(U::FTField{n, m}, k::Int, j::Int) where {n, m}
-    @boundscheck checkbounds(U.data, k, j)
-    @inbounds ret = U.data[k, j]
+    @boundscheck checkbounds(U, k, j)
+    @inbounds ret = U.data[_reindex(k, m), j+1]
     return ret
 end
 
 @inline function Base.setindex!(U::FTField{n, m},
                                 val::Number, k::Int, j::Int) where {n, m}
-    @boundscheck checkbounds(U.data, k, j)
-    @inbounds U.data[k, j] = val
-    return val
-end
-
-
-# Indexing over the wave numbers: we do not impose the symmetry of the FFT
-const WaveNumber = Tuple{Int, Int}
-
-@inline function Base.getindex(U::FTField{n, m}, K::WaveNumber) where {n, m}
-    kk, jj = _reindex(K..., m)
-    @boundscheck checkbounds(U.data, kk, jj)
-    @inbounds ret = U.data[kk, jj]
-    return ret
-end
-
-@inline function Base.setindex!(U::FTField{n, m},
-                                val::Number, K::WaveNumber) where {n, m}
-    kk, jj = _reindex(K..., m)
-    @boundscheck checkbounds(U.data, kk, jj)
-    @inbounds U.data[kk, jj] = val
+    @boundscheck checkbounds(U, k, j)
+    @inbounds U.data[_reindex(k, m), j+1] = val
     return val
 end
 
@@ -107,7 +87,7 @@ Base.copy(U::FTField) = (V = similar(U); V .= U; V)
     @inbounds begin
         OUT .= 0
         for j = 0:p, k = -p:p
-            OUT[(k, j)] = U[(k, j)]
+            OUT[k, j] = U[k, j]
         end
     end
     OUT
