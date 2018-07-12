@@ -118,3 +118,39 @@ end
 
 # obtain two components
 imex(eq::AdjointEquation) = (eq.imTerm, eq.exTerm)
+
+
+
+
+
+# ~~~ SOLVER OBJECT FOR THE ADJOINT EQUATIONS ~~~
+struct AdjointEquation{n, IT<:ImplicitTerm{n}, ET<:LinearisedExplicitTerm{n}}
+    imTerm::IT
+    exTerm::ET
+end
+
+# outer constructor: main entry point
+function AdjointEquation(n::Int,
+                         Re::Real,
+                         sol,             # the forward solution
+                         cost,            # cost gradient function
+                         kforcing::Int=4;
+                         numtype::Type{S}=Float64,
+                         flags::UInt32=FFTW.PATIENT,
+                         dealias::Bool=true) where {S<:Real}
+    iseven(n) || throw(ArgumentError("`n` must be even, got $n"))
+    m = dealias == true ? even_dealias_size(n) : n
+    imTerm = ImplicitTerm(n, -Re, S)
+    exTerm = LinearisedExplicitTerm(n, m, sol, cost, S, flags)
+    AdjointEquation{n, typeof(imTerm), typeof(exTerm)}(imTerm, exTerm)
+end
+
+# evaluate right hand side of governing equations
+(eq::AdjointEquation{n})(t::Real, Λ::FTField{n}, dΛdt::FTField{n}) where {n} =
+    (A_mul_B!(dΛdt, eq.imTerm, Λ); eq.exTerm(t, Λ, dΛdt, true))
+
+# obtain two components
+imex(eq::AdjointEquation) = (eq.imTerm, eq.exTerm)
+
+# multiply in physical space
+u .= u.*dω′dx .+ v.*dω′dy.+ u′.*dωdx .+ v′.*dωdy

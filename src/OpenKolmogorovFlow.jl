@@ -1,20 +1,21 @@
-__precompile__(false)
 module OpenKolmogorovFlow
 
 include("indexing.jl")
-include("utils.jl")
+# include("utils.jl")
 include("ftfield.jl")
 include("field.jl")
-include("variational.jl")
 include("operators.jl")
 include("fft.jl")
 include("norms.jl")
-include("linear.jl")
+include("implicitterm.jl")
+include("forcings.jl")
 include("system.jl")
-include("adjoint.jl")
+include("tangent.jl")
+include("hooks.jl")
 include("flow.jl")
+# include("adjoint.jl")
 include("spectra.jl")
-include("shifts.jl")
-include("distance.jl")
+# include("shifts.jl")
+# include("distance.jl")
 
 end

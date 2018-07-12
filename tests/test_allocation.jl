@@ -1,30 +1,32 @@
 using Base.Test
 using OpenKolmogorovFlow
-using IMEXRKCB
+using Flows
 
 # Test that no memory is allocated in calls
 @testset "allocation                             " begin
     # example dimension
-    n = 100
+    m = 49
+    n = down_dealias_size(m)
 
     # take a Re and a forcing wave number
     Re = 1.2345678
     kforcing = 4
 
     # initial condition
-    Ω₀ = FTField(n)
+    Ω₀ = FTField(n, m)
 
     # get explicit and implicit parts
-    L, N = imex(ForwardEquation(n, Re, kforcing; dealias=false))
+    N, L = splitexim(ForwardEquation(n, m, Re, kforcing))
 
-    for (scheme, elaps_exp) in [(IMEXRKScheme(IMEXRK3R2R(IMEXRKCB3c, false), Ω₀), 0.150),
-                                (IMEXRKScheme(IMEXRK3R2R(IMEXRKCB3e, false), Ω₀), 0.155),
-                                (IMEXRKScheme(IMEXRK4R3R(IMEXRKCB4,  false), Ω₀), 0.320)]
+    for (scheme, elaps_exp) in [(Scheme(:CB3e_3R2R, Ω₀), 0.13),
+                                (Scheme(:CB3c_3R2R, Ω₀), 0.13),
+                                (Scheme(:CB4_4R3R,  Ω₀), 0.22)]
         # get integrator
-        f = integrator(N, L, scheme, 0.01)
+        f = integrator(N, L, scheme, TimeStepConstant(0.01))
 
-        # test elapsed time and allocation
-        @test minimum([@elapsed f(Ω₀, (0, 1)) for i = 1:10]) < elaps_exp
-        @test (@allocated f(Ω₀, (0, 1))) == 0
+        # test allocations
+        min_time = minimum([@elapsed f(Ω₀, (0, 1)) for i = 1:10])
+        @test min_time < elaps_exp
+        @test (@allocated f(Ω₀, (0, 1))) == 0   
     end
 end

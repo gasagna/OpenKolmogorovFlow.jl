@@ -1,77 +1,68 @@
-export Field, fieldsize, make_grid
+export Field, make_grid
 
-abstract type AbstractField{n, T} <: AbstractMatrix{T} end
-Base.indices(f::AbstractField{n}) where {n} = (0:n-1, 0:n-1)
-Base.linearindices(f::AbstractField{n}) where {n} =  1:n^2
+abstract type AbstractField{m, T} <: AbstractMatrix{T} end
+
+Base.size(f::AbstractField{m}) where {m} = (2m+2, 2m+2)
 Base.IndexStyle(::Type{<:AbstractField}) = Base.IndexLinear()
-fieldsize(::Type{<:AbstractField{n}}) where {n} = n
-fieldsize(u::AbstractField{n}) where {n} = n
 
-struct Field{n, T<:Real, M<:AbstractMatrix{T}} <: AbstractField{n, T}
+struct Field{m, T<:Real, M<:AbstractMatrix{T}} <: AbstractField{m, T}
     data::M
-    function Field{n, T, M}(data::M) where {n, T, M}
-        Field_checksize(data, n)
-        new{n, T, M}(data)
+    function Field(data::M) where {T<:Real, M<:AbstractMatrix{T}}
+        _checksize(data)
+        new{size(data, 1)>>1 - 1, T, M}(data)
     end
 end
 
-Field(data::AbstractMatrix) =
-    Field{size(data, 1), eltype(data), typeof(data)}(data)
-Field(n::Int, ::Type{T}=Float64) where {T} = Field(zeros(T, n, n))
 
-function Field_checksize(data::AbstractMatrix, n::Int)
+# OUTER CONSTRUCTORS
+Field(m::Int, ::Type{T}=Float64) where {T} = Field(zeros(T, 2m+2, 2m+2))
+
+# provide function
+Field(m::Int, fun::Base.Callable) = Field(fun.(make_grid(m)...))
+
+function _checksize(data::AbstractMatrix{<:Real})
     M, N = size(data)
     N == M    || throw(ArgumentError("input matrix must be square: got $M×$N"))
-    iseven(n) || throw(ArgumentError("`n` must be even, got $n"))
-    M == n    || throw(ArgumentError("wrong row number, got $M, should be $n"))
-    N == n    || throw(ArgumentError("wrong column number, got $N, should be $n"))
+    iseven(M) || throw(ArgumentError("size must be even"))
+    return nothing
 end
-
-# accessors functions
-@inline Base.parent(U::Field) = U.data
 
 # ~~~ array interface ~~~
-@inline function reindex(n, i, j)
-    ii, jj = i%n + 1, j%n + 1
-    ii ≤ 0 && (ii += n)
-    jj ≤ 0 && (jj += n)
-    ii, jj
-end
-
 @inline function Base.getindex(f::Field{n}, i::Int, j::Int) where {n}
-    P = f.data
-    ii, jj = reindex(n, i, j)
-    @inbounds ret = P[ii, jj]
+    @boundscheck checkbounds(f, i, j)
+    @inbounds ret = f.data[i, j]
     return ret
 end
 
 @inline function Base.setindex!(f::Field{n}, val::Number, i::Int, j::Int) where {n}
-    P = f.data
-    ii, jj = reindex(n, i, j)
-    @inbounds P[ii, jj] = val
+    @boundscheck checkbounds(f, i, j)
+    @inbounds f.data[i, j] = val
     return val
 end
 
+# Linear indexing
 @inline function Base.getindex(f::Field, i::Int)
-    P = f.data
-    @boundscheck checkbounds(P, i)
-    @inbounds ret = P[i]
+    @boundscheck checkbounds(f, i)
+    @inbounds ret = f.data[i]
     return ret
 end
 
 @inline function Base.setindex!(f::Field, val::Number, i::Int)
-    P = f.data
-    @boundscheck checkbounds(P, i)
-    @inbounds P[i] = val
+    @boundscheck checkbounds(f, i)
+    @inbounds f.data[i] = val
     return val
 end
 
-Base.similar(u::Field{n, T}, m::Int=n) where {n, T} = Field(m, T)
+# accessors functions
+Base.parent(U::Field) = U.data
+
+Base.similar(u::Field{m, T}) where {m, T} = Field(m, T)
+Base.copy(u::Field{m, T}) where {m, T} = (v = similar(u); v .= u; v)
 
 # ~~~ GRID FUNCTIONALITY ~~~
-function make_grid(n)
-    Δ = 2π/n
-    x = reshape(collect(0:Δ:2π-Δ), 1, n)
-    y = reshape(collect(0:Δ:2π-Δ), n, 1)
-    return x, y
+function make_grid(m::Int)
+    x = linspace(0, 2π, 2m+3)[1:(2m+2)]
+    return reshape(x, 1, 2m+2), reshape(x, 2m+2, 1)
 end
+
+make_grid(u::Field{m}) where {m} = make_grid(m)
