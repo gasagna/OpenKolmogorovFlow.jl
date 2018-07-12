@@ -4,30 +4,25 @@ import LinearAlgebra: dot, norm
 export dotdiff
 
 # Inner product between two vorticity fields (Ω₁, Ω₂)
-function dot(Ω₁::AbstractFTField{n, m}, Ω₂::AbstractFTField{n, m}) where {n, m}
-    s = real(Ω₁[_reindex(0, 0, m)...]*conj(Ω₂[_reindex(0, 0, m)...]))
+function dot(Ω₁::AbstractFTField{n, m, T}, Ω₂::AbstractFTField{n, m, T}) where {n, m, T}
+    s = zero(T)
     @inbounds for j = 1:n, k=-n:n
-        kk, jj = _reindex(k, j, m)
-        s += 2*real(Ω₁[kk, jj]*conj(Ω₂[kk, jj]))
+        s += 2*real(Ω₁[k, j]*conj(Ω₂[k, j]))
     end
     @inbounds for k=-n:n
-        kk, jj = _reindex(k, 0, m)
-        s += real(Ω₁[kk, jj]*conj(Ω₂[kk, jj]))
+        s += real(Ω₁[k, 0]*conj(Ω₂[k, 0]))
     end
     return s
 end
 
-
 # Inner product of the difference of two vorticity fields (Ω₁-Ω₂, Ω₁-Ω₂)
-function dotdiff(Ω₁::AbstractFTField{n, m}, Ω₂::AbstractFTField{n, m}) where {n, m}
-    s = abs2(Ω₁[_reindex(0, 0, m)...]-Ω₂[_reindex(0, 0, m)...])
+function dotdiff(Ω₁::AbstractFTField{n, m, T}, Ω₂::AbstractFTField{n, m, T}) where {n, m, T}
+    s = zero(T)
     @inbounds for j = 1:n, k=-n:n
-        kk, jj = _reindex(k, j, m)
-        s += 2*abs2(Ω₁[kk, jj]-Ω₂[kk, jj])
+        s += 2*abs2(Ω₁[k, j]-Ω₂[k, j])
     end
     @inbounds for k=-n:n
-        kk, jj = _reindex(k, 0, m)
-        s += abs2(Ω₁[kk, jj]-Ω₂[kk, jj])
+        s += abs2(Ω₁[k, 0]-Ω₂[k, 0])
     end
     return s
 end
