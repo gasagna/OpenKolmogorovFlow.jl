@@ -29,5 +29,5 @@
     ϕ(Ω, (0, 50),  mon)
 
     # test final value is that predicted by explicit equation
-    normdiff(samples(mon)[end], laminarflow(n, m, Re, kforcing)) < 1e-15
+    @test normdiff(samples(mon)[end], laminarflow(n, m, Re, kforcing)) < 1e-15
 end
