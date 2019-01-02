@@ -36,7 +36,7 @@ struct FTField{n, m, T<:Real, M<:AbstractMatrix{Complex{T}}} <: AbstractFTField{
 end
 
 # OUTER CONSTRUCTORS
-FTField(n::Int, m::Int=n, ::Type{T}=Float64) where {T} = FTField{n, m, T}()
+FTField(n::Int, m::Int, ::Type{T}=Float64) where {T} = FTField{n, m, T}()
 
 # size checker
 function _checksize(data::AbstractMatrix{<:Complex})
