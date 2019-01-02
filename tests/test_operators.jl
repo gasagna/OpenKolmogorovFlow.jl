@@ -1,6 +1,3 @@
-  
-using OpenKolmogorovFlow
-
 @testset "derivatives                            " begin
 
     # create data
@@ -12,26 +9,38 @@ using OpenKolmogorovFlow
 
     # do work
     out = ddx!(similar(U), U)
-    @test out == [ 0+0im  9im-10 0+0im
-                   0+0im 11im-12 0+0im
-                   0+0im  0im-0  0+0im
-                   0+0im 15im-16 0+0im]
+    expected = [ 0+0im  9im-10 0+0im
+                 0+0im 11im-12 0+0im
+                 0+0im  0im-0  0+0im
+                 0+0im 15im-16 0+0im]
+    for (a, b) in zip(out, expected)
+         @test a == b 
+    end
 
     out = ddy!(similar(U), U)
-    @test out == [  0im-0   0im-0   0im+0
-                    3im-4  11im-12  0im+0
-                    0im-0   0im-0   0im+0
-                   -3im-4 -15im+16  0im+0]
+    expected = [  0im-0   0im-0   0im+0
+                  3im-4  11im-12  0im+0
+                  0im-0   0im-0   0im+0
+                 -3im-4 -15im+16  0im+0]
+    for (a, b) in zip(out, expected)
+         @test a == b 
+    end
 
     out = invlaplacian!(similar(U), U)
-    @test out == [  0+0im   -9-10im 0im+0
-                   -3-4im -5.5-6im  0im+0
-                    0+0im    0+0im  0im+0
-                   -3+4im -7.5-8im  0im+0]
+    expected = [  0+0im   -9-10im 0im+0
+                 -3-4im -5.5-6im  0im+0
+                  0+0im    0+0im  0im+0
+                 -3+4im -7.5-8im  0im+0]
+    for (a, b) in zip(out, expected)
+         @test a == b 
+    end
     
     out = laplacian!(similar(U), U)
-    @test out == [  0+0im   -9-10im  0im+0
-                   -3-4im  -22-24im  0im+0
-                    0+0im     0+0im  0im+0
-                   -3+4im  -30-32im  0im+0]
+    expected = [  0+0im   -9-10im  0im+0
+                 -3-4im  -22-24im  0im+0
+                  0+0im     0+0im  0im+0
+                 -3+4im  -30-32im  0im+0]
+    for (a, b) in zip(out, expected)
+         @test a == b 
+    end
 end

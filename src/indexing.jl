@@ -1,5 +1,44 @@
+export WaveNumber, @loop_jk, @loop_k
+
 # Transform the wave number k into a row position
-@inline _reindex(k::Int, m::Int) = ifelse(k≥0, k+1, 2m+3+k)
+# @inline _reindex(k::Int, j::Int, m::Int) = (ifelse(k≥0, k+1, 2m+3+k), j+1)
+@inline _reindex(k::Int, j::Int, m::Int) = (ifelse(k≥0, k, 2m+2+k), j)
+
+# allow indexing a specific wavenumber
+struct WaveNumber
+    k::Int 
+    j::Int 
+end
+
+# various macros used to simplify indexing
+macro loop_k(n, m, expr)
+    quote
+        for $(esc(:k)) = 0:$(esc(n))
+            $(esc(:_k)) = $(esc(:k))
+            $(esc(expr))
+        end
+        for $(esc(:k)) = -$(esc(n)):-1
+            $(esc(:_k)) = 2 * $(esc(m)) + 2 + $(esc(:k))
+            $(esc(expr))
+        end
+    end
+end
+
+macro loop_jk(n, m, expr)
+    quote
+        @inbounds for $(esc(:j)) = 0:$(esc(n))
+            $(esc(:_j)) = $(esc(:j))
+            for $(esc(:k)) = 0:$(esc(n))
+                $(esc(:_k)) = $(esc(:k))
+                $(esc(expr))
+            end
+            for $(esc(:k)) = -$(esc(n)):-1
+                $(esc(:_k)) = 2 * $(esc(m)) + 2 + $(esc(:k))
+                $(esc(expr))
+            end
+        end
+    end
+end
 
 
 # # Location 'i' of wave number vector  (`k`, `j`), for a grid with `2m+2` points.

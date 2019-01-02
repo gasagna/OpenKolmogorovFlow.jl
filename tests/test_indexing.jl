@@ -1,18 +1,15 @@
-  
-using OpenKolmogorovFlow
-
 @testset "_reindex                               " begin
     # test data m = 1
     #  0 0 0
     #  1 0 0
     #  2 0 0
     # -1 0 0
-    @test OpenKolmogorovFlow._reindex( 0, 0, 1) == (1, 1)
-    @test OpenKolmogorovFlow._reindex( 0, 1, 1) == (1, 2)
-    @test OpenKolmogorovFlow._reindex( 1, 1, 1) == (2, 2)
-    @test OpenKolmogorovFlow._reindex( 1, 0, 1) == (2, 1)
-    @test OpenKolmogorovFlow._reindex(-1, 1, 1) == (4, 2)
-    @test OpenKolmogorovFlow._reindex(-1, 0, 1) == (4, 1)
+    @test OpenKolmogorovFlow._reindex( 0, 0, 1) == (0, 0)
+    @test OpenKolmogorovFlow._reindex( 0, 1, 1) == (0, 1)
+    @test OpenKolmogorovFlow._reindex( 1, 1, 1) == (1, 1)
+    @test OpenKolmogorovFlow._reindex( 1, 0, 1) == (1, 0)
+    @test OpenKolmogorovFlow._reindex(-1, 1, 1) == (3, 1)
+    @test OpenKolmogorovFlow._reindex(-1, 0, 1) == (3, 0)
 
     # test data m = 2
     #  0 0 0 0
@@ -21,11 +18,11 @@ using OpenKolmogorovFlow
     #  3 0 0 0
     # -2 0 0 0
     # -1 0 0 0
-    @test OpenKolmogorovFlow._reindex( 0, 0, 2) == (1, 1)
-    @test OpenKolmogorovFlow._reindex( 1, 0, 2) == (2, 1)
-    @test OpenKolmogorovFlow._reindex( 2, 0, 2) == (3, 1)
-    @test OpenKolmogorovFlow._reindex(-2, 0, 2) == (5, 1)
-    @test OpenKolmogorovFlow._reindex(-1, 0, 2) == (6, 1)
+    @test OpenKolmogorovFlow._reindex( 0, 0, 2) == (0, 0)
+    @test OpenKolmogorovFlow._reindex( 1, 0, 2) == (1, 0)
+    @test OpenKolmogorovFlow._reindex( 2, 0, 2) == (2, 0)
+    @test OpenKolmogorovFlow._reindex(-2, 0, 2) == (4, 0)
+    @test OpenKolmogorovFlow._reindex(-1, 0, 2) == (5, 0)
 end
 
 # @testset "js and ks                              " begin

@@ -3,27 +3,27 @@ import LinearAlgebra: dot, norm
 # Definitions of inner products, norms and distances
 export dotdiff
 
-# Inner product between two vorticity fields (Ω₁, Ω₂)
+# Inner product between two vorticity fields (Ω₁, Ω₂) with possible non-zero mean
 function dot(Ω₁::AbstractFTField{n, m, T}, Ω₂::AbstractFTField{n, m, T}) where {n, m, T}
+    # we split the loop because different part carry different weight
     s = zero(T)
-    @inbounds for j = 1:n, k=-n:n
-        s += 2*real(Ω₁[k, j]*conj(Ω₂[k, j]))
+    @inbounds for _j = 1:n
+        @loop_k n m (s += 2 * real(Ω₁[_k, _j] * conj(Ω₂[_k, _j])))
     end
-    @inbounds for k=-n:n
-        s += real(Ω₁[k, 0]*conj(Ω₂[k, 0]))
-    end
+    @loop_k n m (s += real(Ω₁[_k, 0] * conj(Ω₂[_k, 0])))
+    # do not count the mean flow twice
+    s -= 0.5*real(Ω₁[0, 0] * conj(Ω₂[0, 0]))
     return s
 end
 
 # Inner product of the difference of two vorticity fields (Ω₁-Ω₂, Ω₁-Ω₂)
 function dotdiff(Ω₁::AbstractFTField{n, m, T}, Ω₂::AbstractFTField{n, m, T}) where {n, m, T}
     s = zero(T)
-    @inbounds for j = 1:n, k=-n:n
-        s += 2*abs2(Ω₁[k, j]-Ω₂[k, j])
+    @inbounds for _j = 1:n
+        @loop_k n m (s += 2*abs2(Ω₁[_k, _j] - Ω₂[_k, _j]))
     end
-    @inbounds for k=-n:n
-        s += abs2(Ω₁[k, 0]-Ω₂[k, 0])
-    end
+    @loop_k n m (s += abs2(Ω₁[_k, 0] - Ω₂[_k, 0]))
+    s -= 0.5*abs2(Ω₁[0, 0] - Ω₂[0, 0])
     return s
 end
 

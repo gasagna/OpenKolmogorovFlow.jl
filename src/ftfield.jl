@@ -1,6 +1,5 @@
 export AbstractFTField,
        FTField,
-       WaveNumber,
        growto!
 
 # ~~~ ABSTRACT TYPE FOR STRUCTURED, ARRAY-LIKE OBJECTS FROM FFT ~~~
@@ -12,7 +11,8 @@ export AbstractFTField,
 # represented by the underlying data.
 abstract type AbstractFTField{n, m, T<:Real} <: AbstractMatrix{Complex{T}} end
 
-Base.axes(::AbstractFTField{n}) where {n} = (-n:n, 0:n)
+Base.axes(::AbstractFTField{n, m}) where {n, m} = (0:2*m+1, 0:m+1)
+Base.size(U::AbstractFTField{n, m}) where {n, m} = (2*m+2, m+2)
 Base.IndexStyle(::Type{<:AbstractFTField}) = IndexLinear()
 
 # ~~~ MAIN TYPE ~~~
@@ -47,25 +47,51 @@ function _checksize(data::AbstractMatrix{<:Complex})
 end
 
 # ~~~ array interface ~~~
-@inline function Base.getindex(U::FTField{n, m}, k::Int, j::Int) where {n, m}
-    @boundscheck checkbounds(U, k, j)
-    @inbounds ret = U.data[_reindex(k, m), j+1]
+Base.@propagate_inbounds function Base.getindex(U::FTField{n, m},
+                                               _k::Int,
+                                               _j::Int) where {n, m}
+    # @boundscheck checkbounds(U, _k, _j)
+    # @inbounds 
+    ret = U.data[_k+1, _j+1]
     return ret
 end
 
-@inline function Base.setindex!(U::FTField{n, m},
-                                val::Number, k::Int, j::Int) where {n, m}
-    @boundscheck checkbounds(U, k, j)
-    @inbounds U.data[_reindex(k, m), j+1] = val
+Base.@propagate_inbounds function Base.setindex!(U::FTField{n, m},
+                                               val::Number,
+                                                _k::Int,
+                                                _j::Int) where {n, m}
+    # @boundscheck checkbounds(U, _k, _j)
+    # @inbounds 
+    U.data[_k+1, _j+1] = val
+    return val
+end
+
+# Indexing with wavenumber
+Base.@propagate_inbounds function Base.getindex(U::FTField{n, m},
+                                                w::WaveNumber) where {n, m}
+    _k, _j = _reindex(w.k, w.j, m)
+    # @boundscheck checkbounds(U, _k, _j)
+    # @inbounds 
+    ret = U.data[_k+1, _j+1]
+    return ret
+end
+
+Base.@propagate_inbounds function Base.setindex!(U::FTField{n, m},
+                                               val::Number,
+                                                 w::WaveNumber) where {n, m}
+    _k, _j = _reindex(w.k, w.j, m)
+    # @boundscheck checkbounds(U, _k, _j)
+    # @inbounds 
+    U.data[_k+1, _j+1] = val
     return val
 end
 
 # Linear indexing
-@inline Base.getindex(U::FTField, i::Int) =
+Base.@propagate_inbounds Base.getindex(U::FTField, i::Int) =
     (@boundscheck checkbounds(U.data, i);
      @inbounds ret = U.data[i]; ret)
 
-@inline Base.setindex!(U::FTField, val::Number, i::Int) =
+ Base.@propagate_inbounds Base.setindex!(U::FTField, val::Number, i::Int) =
     (@boundscheck checkbounds(U.data, i);
      @inbounds U.data[i] = val; val)
 

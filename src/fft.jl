@@ -19,7 +19,7 @@ function _apply_mask(U::AbstractFTField{n, m, T}) where {n, m, T}
             end
         end
         # zero mean
-        U.data[1, 1] = 0
+        # U.data[1, 1] = 0
     end
     return U
 end
