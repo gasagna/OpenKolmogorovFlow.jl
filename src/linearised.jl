@@ -1,5 +1,7 @@
 export LinearisedEquation,
-       splitexim
+       splitexim,
+       TangentMode,
+       AdjointMode
 
 # This triggers a different evaluation of the linearised
 # operator, but the required software infrastructure is
@@ -28,7 +30,7 @@ end
 function LinearisedExTerm(n::Int,
                           m::Int,
                           mode::M,
-                          ::Type{S}, flags) where {S<:AbstractFloat, 
+                          ::Type{S}, flags::UInt32) where {S<:AbstractFloat,
                                                    M<:AbstractLinearMode}
     # stupidity check
     m ≥ n || throw(ArgumentError("`m` must be bigger than `n`"))
@@ -69,36 +71,32 @@ function (eq::LinearisedExTerm{n, m, M})(t::Real,
          dλdx, dλdy = eq.FCache[7],   eq.FCache[8]
 
         # obtain vorticity derivatives
-        ddx!(dΛdx,  Λ)
-        ddy!(dΛdy,  Λ)
-        ddx!(dΩdx,  Ω)
-        ddy!(dΩdy,  Ω)
+        ddx!(dΛdx, Λ); ddx!(dΩdx,  Ω)
+        ddy!(dΛdy, Λ); ddy!(dΩdy,  Ω)
 
         # obtain velocity components
         invlaplacian!(U,  dΩdy);  U  .*= -1
         invlaplacian!(V,  dΩdx)
-        invlaplacian!(U′, dΛdy); U′ .*= -1
+        invlaplacian!(U′, dΛdy);  U′ .*= -1
         invlaplacian!(V′, dΛdx)
 
         # inverse transform to physical space into temporaries
-        eq.ifft!(u,      U)   ; eq.ifft!(u′,    U′)
-        eq.ifft!(v,      V)   ; eq.ifft!(v′,    V′)
+        eq.ifft!(u,      U) ; eq.ifft!(u′,    U′)
+        eq.ifft!(v,      V) ; eq.ifft!(v′,    V′)
         eq.ifft!(dλdx, dΛdx); eq.ifft!(dωdx, dΩdx)
         eq.ifft!(dλdy, dΛdy); eq.ifft!(dωdy, dΩdy)
 
         # multiply in physical space, overwriting u, then come back
         u .= .-u.*dλdx .- v.*dλdy .- u′.*dωdx .- v′.*dωdy
-        eq.fft!(U, u)
 
         # add or replace
-        add == (true ? (dΛdt .+= U)
-                     : (dΛdt  .= U))
+        add == true ? (eq.fft!(U, u); dΛdt .+= U) : eq.fft!(dΛdt, u)
     end
 
     if M <: AdjointMode
                     U,    V    = Eq.FTFStore[1], Eq.FTFStore[2]
                     TMP1, TMP2 = Eq.FTFStore[1], Eq.FTFStore[2]
-        dΛdx, dΛdy, dΩdx, dΩdy = Eq.FTFStore[3], Eq.FTFStore[4], Eq.FTFStore[5], Eq.FTFStore[6] 
+        dΛdx, dΛdy, dΩdx, dΩdy = Eq.FTFStore[3], Eq.FTFStore[4], Eq.FTFStore[5], Eq.FTFStore[6]
                     u,    v    = Eq.FStore[1],   Eq.FStore[2]
                     tmp1, tmp2 = Eq.FStore[1],   Eq.FStore[2]
         dλdx, dλdy, dωdx, dωdy = Eq.FStore[3],   Eq.FStore[4],   Eq.FStore[5],   Eq.FStore[6]
@@ -127,7 +125,7 @@ function (eq::LinearisedExTerm{n, m, M})(t::Real,
         tmp2 .= dλdx.*dωdy .- dλdy.*dωdx; Eq.fft!(TMP2, tmp2)
 
         # add or replace
-        add == (true ? (dΛdt .+= .- TMP1 .- invlaplacian!(U, TMP2)) 
+        add == (true ? (dΛdt .+= .- TMP1 .- invlaplacian!(U, TMP2))
                      : (dΛdt  .= .- TMP1 .- invlaplacian!(U, TMP2)))
     end
 
@@ -153,7 +151,7 @@ function LinearisedEquation(n::Int,
                             m::Int,
                            Re::Real,
                          mode::AbstractLinearMode,
-                        flags::Int=FFT.EXHAUSTIVE,
+                        flags::UInt32=FFTW.EXHAUSTIVE,
                       forcing::AbstractForcing=DummyForcing(n),
                              ::Type{S}=Float64) where {S<:AbstractFloat}
     imTerm = ImplicitTerm(Re)
@@ -182,12 +180,12 @@ function splitexim(eq::LinearisedEquation{n, m}) where {n, m}
     function wrapper(t::Real,
                      Ω::FTField{n, m},
                      Λ::FTField{n, m},
-                 dΛdt::FTField{n, m},
+                  dΛdt::FTField{n, m},
                    add::Bool=false)
-             eq.exTerm(t, Ω, Λ, dΛdt, add)
-             eq.forcing(t, Ω, Λ, dΛdt) # note forcing always adds to dΛdt
-             return dΛdt
-             end
+        eq.exTerm(t, Ω, Λ, dΛdt, add)
+        eq.forcing(t, Ω, Λ, dΛdt) # note forcing always adds to dΛdt
+        return dΛdt
+    end
 
     return wrapper, eq.imTerm
 end

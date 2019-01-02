@@ -13,8 +13,12 @@ struct ForwardExplicitTerm{n, m, FT<:AbstractFTField,   F<:AbstractField,
            β::Vector{Float64}    # used for time step selection based on CFL number
 end
 
-# Outer constructor: TODO: merge with above
-function ForwardExplicitTerm(n::Int, m::Int, kforcing::Int, ::Type{S}) where {S}
+# Outer constructor
+function ForwardExplicitTerm(n::Int,
+                             m::Int,
+                             kforcing::Int,
+                             flags::UInt32,
+                             ::Type{S}) where {S}
     # stupidity check
     m ≥ n || throw(ArgumentError("`m` must be bigger than `n`, got `n, m= $n, $m`. Are you sure?"))
 
@@ -23,8 +27,8 @@ function ForwardExplicitTerm(n::Int, m::Int, kforcing::Int, ::Type{S}) where {S}
     FCache  = [Field(m, S)      for i = 1:4]
 
     # transforms
-    ifft! = InverseFFT!(FTCache[1])
-     fft! = ForwardFFT!(FCache[1])
+    ifft! = InverseFFT!(FTCache[1], flags)
+     fft! = ForwardFFT!(FCache[1], flags)
 
     # construct object. Initialise β to a small value, so we do a small first time step
     ForwardExplicitTerm{n, m, eltype(FTCache), eltype(FCache),
@@ -82,9 +86,10 @@ function ForwardEquation(n::Int,
                          m::Int,
                          Re::Real,
                          kforcing::Int=4,
+                         flags::UInt32=FFTW.EXHAUSTIVE,
                          ::Type{S}=Float64) where {S<:Real}
     imTerm = ImplicitTerm(Re)
-    exTerm = ForwardExplicitTerm(n, m, kforcing, S)
+    exTerm = ForwardExplicitTerm(n, m, kforcing, flags, S)
     ForwardEquation{n, m, typeof(imTerm), typeof(exTerm)}(imTerm, exTerm)
 end
 
@@ -92,7 +97,7 @@ end
 (eq::ForwardEquation{n, m})(t::Real,
                             Ω::FTField{n, m},
                             dΩdt::FTField{n, m}) where {n, m} =
-    (A_mul_B!(dΩdt, eq.imTerm, Ω); 
+    (A_mul_B!(dΩdt, eq.imTerm, Ω);
       eq.exTerm(t, Ω, dΩdt, true))
 
 # obtain two components

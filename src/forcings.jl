@@ -7,13 +7,17 @@ struct DummyForcing{n} <: AbstractForcing{n} end
 
 DummyForcing(n::Int) = DummyForcing{n}()
 
-# call for nonlinear equation
-(::DummyForcing{n})(t::Real, 
-                    Ω::FT, 
+(::DummyForcing{n})(t::Real,
+                    Ω::FT,
                  dΩdt::FT) where {n, FT<:AbstractFTField{n}} = dΩdt
 
-# and for the linear equation
 (::DummyForcing{n})(t::Real,
-                    Ω::FT, 
-                   Ω′::FT, 
-                dΩ′dt::FT) where {n, FT<:AbstractFTField{n}} = dΩ′dt
+                    Ω::FT,
+                    Λ::FT,
+                 dΛdt::FT) where {n, FT<:AbstractFTField{n}} = dΛdt
+
+ (::DummyForcing{n})(t::Real,
+                     Ω::FT,
+                  dΩdt::FT,
+                     Λ::FT,
+                  dΛdt::FT) where {n, FT<:AbstractFTField{n}} = dΛdt
