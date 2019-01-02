@@ -4,7 +4,6 @@ import Random: seed!
 import LinearAlgebra: dot, norm
 using Flows
 
-# include("test_adjoint_allocations.jl")
 # include("test_adjoint_identity.jl")
 include("test_allocation.jl")
 include("test_broadcast.jl")
