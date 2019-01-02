@@ -35,8 +35,8 @@ down_dealias_size(m::Int) = findlast(n->(up_dealias_size(n) ≤ m), 1:m)
 # forward transform
 struct ForwardFFT!{m, P}
     plan::P
-    function ForwardFFT!(u::AbstractField{m}) where {m}
-        plan = plan_rfft(parent(u), [2, 1], flags=FFTW.PATIENT)
+    function ForwardFFT!(u::AbstractField{m}, flags=FFTW.EXHAUSTIVE) where {m}
+        plan = plan_rfft(parent(u), [2, 1], flags=flags)
         new{m, typeof(plan)}(plan)
     end
 end
@@ -50,8 +50,8 @@ end
 # inverse transform
 struct InverseFFT!{m, P}
     plan::P
-    function InverseFFT!(U::AbstractFTField{n, m}) where {n, m}
-        plan = plan_brfft(parent(U), 2m+2, [2, 1], flags=FFTW.PATIENT)
+    function InverseFFT!(U::AbstractFTField{n, m}, flags=FFTW.EXHAUSTIVE) where {n, m}
+        plan = plan_brfft(parent(U), 2m+2, [2, 1], flags=flags)
         new{m, typeof(plan)}(plan)
     end
 end
