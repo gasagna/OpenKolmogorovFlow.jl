@@ -64,8 +64,8 @@ function (Eq::ForwardExplicitTerm{n, m, FT})(t::Real,
     add == true ? (Eq.fft!(U, u); dΩdt .+= U) : Eq.fft!(dΩdt, u)
 
     # ~~~ FORCING TERM ~~~
-    dΩdt[ Eq.kforcing, 0] -= Eq.kforcing/2
-    dΩdt[-Eq.kforcing, 0] -= Eq.kforcing/2
+    dΩdt[WaveNumber( Eq.kforcing, 0)] -= Eq.kforcing/2
+    dΩdt[WaveNumber(-Eq.kforcing, 0)] -= Eq.kforcing/2
 
     return nothing
 end
