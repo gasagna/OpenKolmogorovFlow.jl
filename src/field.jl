@@ -61,7 +61,7 @@ Base.copy(u::Field{m, T}) where {m, T} = (v = similar(u); v .= u; v)
 
 # ~~~ GRID FUNCTIONALITY ~~~
 function make_grid(m::Int)
-    x = linspace(0, 2π, 2m+3)[1:(2m+2)]
+    x = range(0, stop=2π, length=2m+3)[1:(2m+2)]
     return reshape(x, 1, 2m+2), reshape(x, 2m+2, 1)
 end
 

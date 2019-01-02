@@ -1,6 +1,3 @@
-using OpenKolmogorovFlow
-  
-
 @testset "constructors                           " begin
     @test_throws ArgumentError Field(randn(4, 5))
     @test_throws ArgumentError Field(randn(4, 6))
