@@ -1,7 +1,7 @@
 import LinearAlgebra: dot, norm
 
 # Definitions of inner products, norms and distances
-export dotdiff
+export normdiff
 
 # Inner product between two vorticity fields (Ω₁, Ω₂) with possible non-zero mean
 function dot(Ω₁::AbstractFTField{n, m, T}, Ω₂::AbstractFTField{n, m, T}) where {n, m, T}
@@ -17,7 +17,7 @@ function dot(Ω₁::AbstractFTField{n, m, T}, Ω₂::AbstractFTField{n, m, T}) w
 end
 
 # Inner product of the difference of two vorticity fields (Ω₁-Ω₂, Ω₁-Ω₂)
-function dotdiff(Ω₁::AbstractFTField{n, m, T}, Ω₂::AbstractFTField{n, m, T}) where {n, m, T}
+function normdiff(Ω₁::AbstractFTField{n, m, T}, Ω₂::AbstractFTField{n, m, T}) where {n, m, T}
     s = zero(T)
     @inbounds for _j = 1:n
         @loop_k n m (s += 2*abs2(Ω₁[_k, _j] - Ω₂[_k, _j]))

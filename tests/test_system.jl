@@ -1,44 +1,33 @@
-using OpenKolmogorovFlow
-using IMEXRKCB
-  
-
 # Test that solution converges to the
 # laminar flow for small Reynolds numbers
 @testset "laminar flow                           " begin
     # example dimension
     n = 10
+    m = n
 
     # take a Re and a forcing wave number
     Re = 1.2345678
     kforcing = 4
 
     # initial condition
-    Ω₀ = FTField(n)
+    Ω = FTField(n)
 
-    for dealias in [true, false]
-        # get explicit and implicit parts
-        L, N = imex(ForwardEquation(n, Re, kforcing; dealias=dealias))
+    # get explicit and implicit parts
+    f = ForwardEquation(n, m, Re, kforcing)
 
-        # for each integration scheme
-        for impl in [IMEXRK3R2R(IMEXRKCB3c, false),
-                     IMEXRK3R2R(IMEXRKCB3e, false),
-                     IMEXRK4R3R(IMEXRKCB4,  false)]
+    # define integrator
+    ϕ = flow(splitexim(f)..., CB3R2R3e(Ω, :NORMAL), TimeStepConstant(0.01))
 
-            # define integrator
-            f = integrator(N, L, IMEXRKScheme(impl, Ω₀), 0.005)
+    # start from some non zero initial condition
+    Ω .= 0.01; 
+    Ω[WaveNumber(0, 0)] = 0
 
-            # start from some non zero initial condition
-            Ω₀ .= 0.01; Ω₀[0, 0] = 0
+    # monitor the state
+    mon = Monitor(Ω, copy)
 
-            # monitor the state excited by forcing
-            m = Monitor(Ω₀, Ω->Ω)
+    # map forward
+    ϕ(Ω, (0, 50),  mon)
 
-            # map forward
-            f(Ω₀, (0, 50),  m)
-
-            # test final value is that predicted by explicit equation
-            Δ = m.xs[end] .- laminarflow(n, Re, kforcing)
-            @test maximum(abs, Δ) < 1e-15
-        end
-    end
+    # test final value is that predicted by explicit equation
+    normdiff(samples(mon)[end], laminarflow(n, m, Re, kforcing)) < 1e-15
 end

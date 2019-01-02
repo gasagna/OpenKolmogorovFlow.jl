@@ -1,4 +1,4 @@
-@testset "dot product                          " begin
+@testset "dot product                            " begin
     n, m = 5, 10
     x, y = make_grid(m)
 
@@ -76,9 +76,9 @@ end
 
     u = sin.(1.0*x.+1.0*y); U = FFT(Field(u), n)
     v = sin.(1.0*x.+1.0*y); V = FFT(Field(v), n)
-    @test dotdiff(U, V) == 0
+    @test normdiff(U, V) == 0
 
     u = 2*sin.(1.0*x.+1.0*y); U = FFT(Field(u), n)
     v =   sin.(1.0*x.+1.0*y); V = FFT(Field(v), n)
-    @test abs(dotdiff(U, V) - 0.5) < TOL
+    @test abs(normdiff(U, V) - 0.5) < TOL
 end
