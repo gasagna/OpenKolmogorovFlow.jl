@@ -11,8 +11,8 @@ include("test_broadcast.jl")
 include("test_indexing.jl")
 include("test_norms.jl")
 include("test_system.jl")
+include("test_allocation.jl")
 
-# include("test_allocation.jl") # FIXME
 # include("test_fft.jl")        # FIXME
 # include("test_flow.jl")       # OK
 # include("test_spectra.jl")

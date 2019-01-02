@@ -43,7 +43,7 @@
     @test abs(dot(U, V) - 0.24*0.5) < TOL
 end
 
-@testset "dot product performance              " begin
+@testset "dot product performance                " begin
     m, n = 49, 49
     U = FFT(Field(m, (x, y)->rand()), n)
     V = FFT(Field(m, (x, y)->rand()), n)
