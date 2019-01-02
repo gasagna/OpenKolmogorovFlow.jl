@@ -1,3 +1,5 @@
+using FFTW
+
 export ForwardEquation, splitexim
 
 # ~~~ Explicit Term of Forward Equations ~~~
