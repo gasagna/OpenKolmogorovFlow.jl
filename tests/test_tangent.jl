@@ -1,7 +1,7 @@
 using DualNumbers
 using OpenKolmogorovFlow
 using IMEXRKCB
-using Base.Test
+  
 
 @testset "nonlinear simulation vs Var. Eqs.      " begin
     # seed random number generator

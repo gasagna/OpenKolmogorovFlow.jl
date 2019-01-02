@@ -1,6 +1,6 @@
 using OpenKolmogorovFlow
 using IMEXRKCB
-using Base.Test
+  
 
 @testset "adjoint allocations                    " begin
     

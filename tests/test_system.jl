@@ -1,6 +1,6 @@
 using OpenKolmogorovFlow
 using IMEXRKCB
-using Base.Test
+  
 
 # Test that solution converges to the
 # laminar flow for small Reynolds numbers

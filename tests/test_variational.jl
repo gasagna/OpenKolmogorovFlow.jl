@@ -1,5 +1,5 @@
 using OpenKolmogorovFlow
-using Base.Test
+  
 using DualNumbers
 
 @testset "operators                              " begin

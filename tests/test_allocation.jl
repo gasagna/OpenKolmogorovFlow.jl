@@ -1,7 +1,3 @@
-using Base.Test
-using OpenKolmogorovFlow
-using Flows
-
 # Test that no memory is allocated in calls
 @testset "allocation                             " begin
     # example dimension

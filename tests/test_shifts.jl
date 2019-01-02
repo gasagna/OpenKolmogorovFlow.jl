@@ -1,4 +1,4 @@
-using Base.Test
+  
 using OpenKolmogorovFlow
 
 @testset "norm is shift invariant                " begin
