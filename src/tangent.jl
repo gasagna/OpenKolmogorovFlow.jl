@@ -32,7 +32,6 @@ end
 # Callable
 function (eq::TangentExplicitTerm{n, m})(t::Real,
                                          Ω::FTField{n, m},
-                                  NOT_USED::FTField{n, m},
                                         Ω′::FTField{n, m},
                                      dΩ′dt::FTField{n, m},
                                        add::Bool=false) where {n, m}
@@ -107,8 +106,8 @@ function splitexim(eq::TangentEquation{n, m}) where {n, m}
                     Ω′::FTField{n, m},
                  dΩ′dt::FTField{n, m},
                    add::Bool=false)
-        eq.exTerm(t, Ω, dΩdt, Ω′, dΩ′dt, add)
-        eq.forcing(t, Ω, dΩdt, Ω′, dΩ′dt) # note forcing always adds to dVdt
+        eq.exTerm(t, Ω, Ω′, dΩ′dt, add)
+        eq.forcing(t, Ω, dΩdt, Ω′, dΩ′dt) # note forcing always adds to dΩ′dt
         return dΩ′dt
     end
     return wrapper, eq.imTerm
@@ -121,7 +120,7 @@ function (eq::TangentEquation{n, m})(t::Real,
                                     Ω′::FTField{n, m},
                                  dΩ′dt::FTField{n, m}) where {n, m}
     A_mul_B!(dΩ′dt, eq.imTerm, Ω′)
-    eq.exTerm(t, Ω, dΩdt, Ω′, dΩ′dt, true)
+    eq.exTerm(t, Ω, Ω′, dΩ′dt, true)
     eq.forcing(t, Ω, dΩdt, Ω′, dΩ′dt) # note forcing always adds to dVdt
     return dΩ′dt
 end
