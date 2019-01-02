@@ -1,8 +1,8 @@
-export TangentEquation, 
+export TangentEquation,
        splitexim
 
 # ~~~ Explicit Term of Linearised Equations ~~~
-struct TangentExplicitTerm{n, m, FT<:AbstractFTField, F<:AbstractField, 
+struct TangentExplicitTerm{n, m, FT<:AbstractFTField, F<:AbstractField,
                                 ITT<:InverseFFT!,   FTT<:ForwardFFT!}
     FTFCache::Vector{FT} # storage
       FCache::Vector{F}
@@ -10,11 +10,10 @@ struct TangentExplicitTerm{n, m, FT<:AbstractFTField, F<:AbstractField,
         fft!::FTT
 end
 
-# Outer constructor: TODO: merge with above
-function TangentExplicitTerm(n::Int, m::Int, ::Type{S}) where {S<:Real}
+# Outer constructor:
+function TangentExplicitTerm(n::Int, m::Int, ::Type{S}) where {S<:AbstractFloat}
     # stupidity check
     m ≥ n || throw(ArgumentError("`m` must be bigger than `n`"))
-
 
     # complex fields have size `n` but real fields might have larger size `m`
     FTFCache = [FTField(n, m, S) for i = 1:8]
@@ -25,22 +24,27 @@ function TangentExplicitTerm(n::Int, m::Int, ::Type{S}) where {S<:Real}
      fft! = ForwardFFT!(  FCache[1])
 
     # construct object
-    TangentExplicitTerm{n, m, eltype(FTFCache), eltype(FCache), 
-                              typeof(ifft!), typeof(fft!)}(FTFCache, 
+    TangentExplicitTerm{n, m, eltype(FTFCache), eltype(FCache),
+                              typeof(ifft!), typeof(fft!)}(FTFCache,
                                                            FCache, ifft!, fft!)
 end
 
 # Callable
-function (Eq::TangentExplicitTerm{n, m, FT})(t::Real, Ω::FT, Ω′::FT, dΩ′dt::FT, add::Bool=false) where {n, m, FT<:FTField{n, m}}
+function (eq::TangentExplicitTerm{n, m})(t::Real,
+                                         Ω::FTField{n, m},
+                                  NOT_USED::FTField{n, m},
+                                        Ω′::FTField{n, m},
+                                     dΩ′dt::FTField{n, m},
+                                       add::Bool=false) where {n, m}
     # extract aliases. We start from one because 1 might be taken for Ω
-        U,    V  = Eq.FTFCache[1], Eq.FTFCache[2]
-       U′,    V′ = Eq.FTFCache[3], Eq.FTFCache[4]
-     dΩdx,  dΩdy = Eq.FTFCache[5], Eq.FTFCache[6]
-    dΩ′dx, dΩ′dy = Eq.FTFCache[7], Eq.FTFCache[8]
-        u,     v = Eq.FCache[1],   Eq.FCache[2]
-       u′,    v′ = Eq.FCache[3],   Eq.FCache[4]
-     dωdx,  dωdy = Eq.FCache[5],   Eq.FCache[6]
-    dω′dx, dω′dy = Eq.FCache[7],   Eq.FCache[8]
+        U,    V  = eq.FTFCache[1], eq.FTFCache[2]
+       U′,    V′ = eq.FTFCache[3], eq.FTFCache[4]
+     dΩdx,  dΩdy = eq.FTFCache[5], eq.FTFCache[6]
+    dΩ′dx, dΩ′dy = eq.FTFCache[7], eq.FTFCache[8]
+        u,     v = eq.FCache[1],   eq.FCache[2]
+       u′,    v′ = eq.FCache[3],   eq.FCache[4]
+     dωdx,  dωdy = eq.FCache[5],   eq.FCache[6]
+    dω′dx, dω′dy = eq.FCache[7],   eq.FCache[8]
 
     # obtain vorticity derivatives
     ddx!(dΩ′dx, Ω′)
@@ -55,14 +59,14 @@ function (Eq::TangentExplicitTerm{n, m, FT})(t::Real, Ω::FT, Ω′::FT, dΩ′d
     invlaplacian!(V′, dΩ′dx)
 
     # inverse transform to physical space into temporaries
-    Eq.ifft!(u,      U)   ; Eq.ifft!(u′,    U′)
-    Eq.ifft!(v,      V)   ; Eq.ifft!(v′,    V′)
-    Eq.ifft!(dω′dx, dΩ′dx); Eq.ifft!(dωdx, dΩdx)
-    Eq.ifft!(dω′dy, dΩ′dy); Eq.ifft!(dωdy, dΩdy)
+    eq.ifft!(u,      U)   ; eq.ifft!(u′,    U′)
+    eq.ifft!(v,      V)   ; eq.ifft!(v′,    V′)
+    eq.ifft!(dω′dx, dΩ′dx); eq.ifft!(dωdx, dΩdx)
+    eq.ifft!(dω′dy, dΩ′dy); eq.ifft!(dωdy, dΩdy)
 
     # multiply in physical space, overwriting u, then come back
     u .= .-u.*dω′dx .- v.*dω′dy .- u′.*dωdx .- v′.*dωdy
-    Eq.fft!(U, u)
+    eq.fft!(U, u)
 
     add == true ? (dΩ′dt .+= U) : (dΩ′dt .= U)
 
@@ -71,55 +75,53 @@ end
 
 
 # ~~~ SOLVER OBJECT FOR THE LINEAR EQUATIONS ~~~
-struct TangentEquation{n, m, 
+struct TangentEquation{n, m,
                        IT<:ImplicitTerm,
                        ET<:TangentExplicitTerm{n, m},
-                       G<:AbstractForcing{n},
-                       M<:Flows.AbstractMonitor,
-                       FT<:AbstractFTField{n, m}}
+                       G<:AbstractForcing{n}}
      imTerm::IT
      exTerm::ET
     forcing::G  # forcing for the linearised equations
-        mon::M  # monitor for the forward solution
-        TMP::FT # temporary field for the interpolation
-          χ::Float64
 end
 
 # outer constructor: main entry point
 function TangentEquation(n::Int,
                          m::Int,
                          Re::Real,
-                         mon::Flows.AbstractMonitor{T, X},
                          forcing::AbstractForcing=DummyForcing(n),
-                         χ::Real=0,
-                         ::Type{S}=Float64) where {T, X, S<:Real}
-    X <: FTField{n, m} || error("invalid monitor object")
+                         ::Type{S}=Float64) where {S<:AbstractFloat}
     imTerm = ImplicitTerm(Re)
     exTerm = TangentExplicitTerm(n, m, S)
-    TMP = FTField(n, m, S)
     TangentEquation{n, m,
                    typeof(imTerm),
                    typeof(exTerm),
-                   typeof(forcing),
-                   typeof(mon),
-                   typeof(TMP)}(imTerm, exTerm, forcing, mon, TMP, χ)
+                   typeof(forcing)}(imTerm, exTerm, forcing)
 end
 
-# obtain two components
+
+# /// SPLIT EXPLICIT AND IMPLICIT PARTS ///
 function splitexim(eq::TangentEquation{n, m}) where {n, m}
-    function wrapper(t::Real, Ω′::AbstractFTField{n, m}, dΩ′dt::AbstractFTField{n, m})
-        # interpolate U and evaluate nonlinear interaction term and forcing
-        eq.mon(eq.TMP, t, Val{0}())
-        eq.exTerm(t, eq.TMP, Ω′, dΩ′dt, false)
-        eq.forcing(t, eq.TMP, Ω′, dΩ′dt)
-
-        # interpolate dUdt if needed
-        if eq.χ != 0
-            eq.mon(eq.TMP, t, Val{1}())
-            dΩ′dt .+= eq.χ .* eq.TMP
-        end
-
+    function wrapper(t::Real,
+                     Ω::FTField{n, m},
+                  dΩdt::FTField{n, m},
+                    Ω′::FTField{n, m},
+                 dΩ′dt::FTField{n, m},
+                   add::Bool=false)
+        eq.exTerm(t, Ω, dΩdt, Ω′, dΩ′dt, add)
+        eq.forcing(t, Ω, dΩdt, Ω′, dΩ′dt) # note forcing always adds to dVdt
         return dΩ′dt
     end
     return wrapper, eq.imTerm
+end
+
+# /// EVALUATE RIGHT HAND SIDE OF LINEARISED EQUATION ///
+function (eq::TangentEquation{n, m})(t::Real,
+                                     Ω::FTField{n, m},
+                                  dΩdt::FTField{n, m},
+                                    Ω′::FTField{n, m},
+                                 dΩ′dt::FTField{n, m}) where {n, m}
+    A_mul_B!(dΩ′dt, eq.imTerm, Ω′)
+    eq.exTerm(t, Ω, dΩdt, Ω′, dΩ′dt, true)
+    eq.forcing(t, Ω, dΩdt, Ω′, dΩ′dt) # note forcing always adds to dVdt
+    return dΩ′dt
 end
