@@ -8,7 +8,7 @@ using Flows
 include("test_allocation.jl")
 include("test_broadcast.jl")
 # include("test_distance.jl")
-# include("test_fft.jl")        # FIXME
+include("test_fft.jl")
 include("test_field.jl")
 include("test_flow.jl")
 include("test_ftfield.jl")
