@@ -52,7 +52,7 @@ function (eq::LinearisedExTerm{n, m, M})(t::Real,
                                          Ω::FTField{n, m},
                                          Λ::FTField{n, m},
                                       dΛdt::FTField{n, m},
-                                       add::Bool=false) where {n, m}
+                                       add::Bool=false) where {n, m, M}
 
     # set mean to zero
     Λ[WaveNumber(0, 0)] = 0
@@ -91,7 +91,8 @@ function (eq::LinearisedExTerm{n, m, M})(t::Real,
         eq.fft!(U, u)
 
         # add or replace
-        add == true ? (dΛdt .+= U) : (dΛdt .= U)
+        add == (true ? (dΛdt .+= U)
+                     : (dΛdt  .= U))
     end
 
     if M <: AdjointMode
@@ -126,8 +127,8 @@ function (eq::LinearisedExTerm{n, m, M})(t::Real,
         tmp2 .= dλdx.*dωdy .- dλdy.*dωdx; Eq.fft!(TMP2, tmp2)
 
         # add or replace
-        add == true ? (dΛdt .+= .- TMP1 .- invlaplacian!(U, TMP2)) 
-                    : (dΛdt  .= .- TMP1 .- invlaplacian!(U, TMP2))
+        add == (true ? (dΛdt .+= .- TMP1 .- invlaplacian!(U, TMP2)) 
+                     : (dΛdt  .= .- TMP1 .- invlaplacian!(U, TMP2)))
     end
 
     # reset mean
