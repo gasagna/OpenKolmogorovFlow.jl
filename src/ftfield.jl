@@ -50,9 +50,8 @@ end
 Base.@propagate_inbounds function Base.getindex(U::FTField{n, m},
                                                _k::Int,
                                                _j::Int) where {n, m}
-    # @boundscheck checkbounds(U, _k, _j)
-    # @inbounds 
-    ret = U.data[_k+1, _j+1]
+    @boundscheck checkbounds(U, _k, _j)
+    @inbounds ret = U.data[_k+1, _j+1]
     return ret
 end
 
@@ -60,9 +59,8 @@ Base.@propagate_inbounds function Base.setindex!(U::FTField{n, m},
                                                val::Number,
                                                 _k::Int,
                                                 _j::Int) where {n, m}
-    # @boundscheck checkbounds(U, _k, _j)
-    # @inbounds 
-    U.data[_k+1, _j+1] = val
+    @boundscheck checkbounds(U, _k, _j)
+    @inbounds U.data[_k+1, _j+1] = val
     return val
 end
 
@@ -70,9 +68,8 @@ end
 Base.@propagate_inbounds function Base.getindex(U::FTField{n, m},
                                                 w::WaveNumber) where {n, m}
     _k, _j = _reindex(w.k, w.j, m)
-    # @boundscheck checkbounds(U, _k, _j)
-    # @inbounds 
-    ret = U.data[_k+1, _j+1]
+    @boundscheck checkbounds(U, _k, _j)
+    @inbounds ret = U.data[_k+1, _j+1]
     return ret
 end
 
@@ -80,9 +77,8 @@ Base.@propagate_inbounds function Base.setindex!(U::FTField{n, m},
                                                val::Number,
                                                  w::WaveNumber) where {n, m}
     _k, _j = _reindex(w.k, w.j, m)
-    # @boundscheck checkbounds(U, _k, _j)
-    # @inbounds 
-    U.data[_k+1, _j+1] = val
+    @boundscheck checkbounds(U, _k, _j)
+    @inbounds U.data[_k+1, _j+1] = val
     return val
 end
 
