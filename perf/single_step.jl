@@ -10,7 +10,7 @@ const n = 64
 const m = 96
 
 # get explicit and implicit parts
-sys = Flows.System(splitexim(ForwardEquation(n, m, Re, kforcing, FFTW.EXHAUSTIVE))...)
+sys = Flows.System(splitexim(ForwardEquation(n, m, Re, kforcing, FFTW.MEASURE))...)
 
 # initial condition
 Ω = FTField(n, m)

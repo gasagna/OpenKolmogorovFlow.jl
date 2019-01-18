@@ -66,12 +66,12 @@ end
 # We need copies because the plan destroys the input
 function FFT(u::AbstractField{m, T}, n::Int) where {m, T}
     v = copy(u)
-    fun = ForwardFFT!(v); v .= u
+    fun = ForwardFFT!(v, FFTW.ESTIMATE); v .= u
     return fun(FTField(n, m, T), v)
  end
 
 function IFFT(U::AbstractFTField{n, m, T}) where {n, m, T}
     V = copy(U)
-    fun = InverseFFT!(V); V .= U
+    fun = InverseFFT!(V, FFTW.ESTIMATE); V .= U
     return fun(Field(m, T), V)
 end
