@@ -1,4 +1,4 @@
-import Flows: AbstractTimeStepFromHook
+import Flows: AbstractTimeStepFromHook, Coupled
 
 export CFLHook
 
@@ -13,3 +13,7 @@ end
 
 (hook::CFLHook)(g::ForwardExplicitTerm, A, z) = 
     clamp(hook.CFL_max * g.β[1], hook.Δt_bounds...)
+
+# integrate coupled equations based on CFL of nonlinear state
+(hook::CFLHook)(g::Coupled, A, z) = 
+    clamp(hook.CFL_max * g[1].β[1], hook.Δt_bounds...)
