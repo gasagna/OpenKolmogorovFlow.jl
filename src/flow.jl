@@ -1,4 +1,4 @@
-export laminarflow, dissrate
+export laminarflow, dissrate, powinput
 
 # Returns the vorticity field of the laminar flow.
 function laminarflow(n::Int, m::Int, Re::Real, kforcing::Int=4)
@@ -12,3 +12,6 @@ end
 
 # Energy dissipation rate density associated to vorticity field `Ω`
 dissrate(Ω::FTField{n, m}, Re::Real) where {n, m} = norm(Ω)^2/Re
+
+# power input 
+powinput(Ω::FTField, kf::Int=4) = -imag(im * Ω[WaveNumber(kf, 0)]/kf)
