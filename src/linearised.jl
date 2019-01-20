@@ -196,7 +196,7 @@ function (eq::LinearisedEquation{n, m})(t::Real,
                                      dΩdt::FTField{n, m},
                                         Λ::FTField{n, m},
                                      dΛdt::FTField{n, m}) where {n, m}
-    A_mul_B!(dΛdt, eq.imTerm, Λ)
+    mul!(dΛdt, eq.imTerm, Λ)
     eq.exTerm(t, Ω, Λ, dΛdt, true)
     eq.forcing(t, Ω, dΩdt, Λ, dΛdt) # note forcing always adds to dVdt
     return dΛdt
@@ -207,7 +207,7 @@ function (eq::LinearisedEquation{n, m})(t::Real,
                                         Ω::FTField{n, m},
                                         Λ::FTField{n, m},
                                      dΛdt::FTField{n, m}) where {n, m}
-    A_mul_B!(dΛdt, eq.imTerm, Λ)
+    mul!(dΛdt, eq.imTerm, Λ)
     eq.exTerm(t, Ω, Λ, dΛdt, true)
     eq.forcing(t, Ω, Λ, dΛdt) # note forcing always adds to dVdt
     return dΛdt

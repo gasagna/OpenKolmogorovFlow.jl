@@ -97,7 +97,7 @@ end
 (eq::ForwardEquation{n, m})(t::Real,
                             Ω::FTField{n, m},
                             dΩdt::FTField{n, m}) where {n, m} =
-    (A_mul_B!(dΩdt, eq.imTerm, Ω);
+    (mul!(dΩdt, eq.imTerm, Ω);
       eq.exTerm(t, Ω, dΩdt, true))
 
 # obtain two components
