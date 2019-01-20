@@ -1,6 +1,6 @@
 @testset "nonlinear vs tangent equations         " begin
     # seed random number generator
-    seed!(0)
+    Random.seed!(0)
 
     # take a simple setup
     n = 48

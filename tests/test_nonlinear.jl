@@ -10,7 +10,7 @@
     kforcing = 4
 
     # initial condition
-    Ω = FTField(n)
+    Ω = FTField(n, m)
 
     # get explicit and implicit parts
     f = ForwardEquation(n, m, Re, kforcing)

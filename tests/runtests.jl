@@ -1,8 +1,8 @@
 using Test
-using OpenKolmogorovFlow
-import Random: seed!
-import LinearAlgebra: dot, norm
 using Flows
+using Random
+using LinearAlgebra
+using OpenKolmogorovFlow
 
 # include("test_adjoint_identity.jl")
 include("test_allocation.jl")
