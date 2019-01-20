@@ -14,7 +14,7 @@ end
 function yshift!(U::FTField{n}, m::Int) where {n}
     @inbounds for k = -n:n
         # precompute this, since it's expensive
-        val = cis(k*m*π/4)
+        val = cis(k*m*π/2)
         @simd for j = 0:n
             U[WaveNumber(k, j)] *= val
         end

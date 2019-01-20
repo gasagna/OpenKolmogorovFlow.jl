@@ -6,7 +6,7 @@
     TOL = 1e-14
 
     # init rng
-    seed!(0)
+    Random.seed!(0)
 
     # all cosine waves fit properly on the grid
     for j = -n:n, k =-n:n
@@ -81,4 +81,24 @@ end
     u = 2*sin.(1.0*x.+1.0*y); U = FFT(Field(u), n)
     v =   sin.(1.0*x.+1.0*y); V = FFT(Field(v), n)
     @test abs(normdiff(U, V) - 0.5) < TOL
+end
+
+@testset "minnormdiff                            " begin
+    n, m = 41, up_dealias_size(41)
+    U = FFT(Field(randn(2m+2, 2m+2)), n)
+    V = copy(U)
+
+    # number of shifts along x to test
+    TMP = copy(U)
+    N = 20
+
+    # apply random shift to V, then min distance should be zero
+    s = 3*2*π/20
+    m = 2
+    shift!(U, s, m)
+
+    dmin, (smin, mmin) = minnormdiff(V, U, TMP, N)
+    @test mmin == m
+    @test smin == s
+    @test normdiff(shift!(V, smin, mmin), U) < 1e-16
 end
