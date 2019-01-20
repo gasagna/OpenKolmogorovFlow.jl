@@ -1,7 +1,7 @@
 import LinearAlgebra: dot, norm
 
 # Definitions of inner products, norms and distances
-export normdiff
+export normdiff, minnormdiff
 
 # Inner product between two vorticity fields (Ω₁, Ω₂) with possible non-zero mean
 function dot(Ω₁::AbstractFTField{n, m, T}, Ω₂::AbstractFTField{n, m, T}) where {n, m, T}
@@ -31,3 +31,35 @@ end
 norm(Ω::AbstractFTField, n::Int=2) =
     (n==2 || throw(ArgumentError("only the 2-norm is defined"));
     sqrt(dot(Ω, Ω)))
+
+
+# return minimum distance across shifts
+function minnormdiff(Ω₁::FTField{n, m},
+                     Ω₂::FTField{n, m},
+                     TMP::FTField{n, m} = copy(Ω₁),
+                     N::Int = 15) where {n, m}
+
+    # mimimum values 
+    dmin = normdiff(Ω₁, Ω₂)
+    smin = 0.0
+    mmin = 0
+
+    # for every y shift
+    for _m = (0, 2, 4, 6)
+        TMP .= Ω₁
+        yshift!(TMP, _m)
+
+        # scan through x shifts
+        for k = 1:N-1
+            xshift!(TMP, 2*π/N)
+            d = normdiff(TMP, Ω₂)
+            if d < dmin
+                dmin = d
+                smin = 2*π/N * k
+                mmin = _m
+            end
+        end
+    end
+   
+    return dmin, (smin, mmin)
+end
