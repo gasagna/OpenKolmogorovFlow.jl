@@ -46,6 +46,9 @@ function _checksize(data::AbstractMatrix{<:Complex})
     return nothing
 end
 
+# this is for JFOp in NKSearch
+Base.hash(U::FTField) = hash(parent(U))
+
 # ~~~ array interface ~~~
 Base.@propagate_inbounds function Base.getindex(U::FTField{n, m},
                                                _k::Int,
