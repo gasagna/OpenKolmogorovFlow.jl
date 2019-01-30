@@ -13,8 +13,7 @@ include("linearised.jl")
 include("hooks.jl")
 include("flow.jl")
 include("spectra.jl")
-# include("adjoint.jl")
-# include("shifts.jl")
+include("shifts.jl")
 # include("distance.jl")
 
 end
