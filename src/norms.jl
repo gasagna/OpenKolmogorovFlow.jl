@@ -36,7 +36,7 @@ norm(Ω::AbstractFTField, n::Int=2) =
 # return minimum distance across shifts
 function minnormdiff(Ω₁::FTField{n, m},
                      Ω₂::FTField{n, m},
-                     TMP::FTField{n, m} = copy(Ω₁),
+                     TMP::FTField{n, m} = similar(Ω₁),
                      N::Int = 15) where {n, m}
 
     # mimimum values 
@@ -45,7 +45,7 @@ function minnormdiff(Ω₁::FTField{n, m},
     mmin = 0
 
     # for every y shift
-    for _m = (0, 2, 4, 6)
+    for _m = (0, 1, 2, 3)
         TMP .= Ω₁
         yshift!(TMP, _m)
 
