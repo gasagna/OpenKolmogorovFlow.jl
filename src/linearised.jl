@@ -94,12 +94,12 @@ function (eq::LinearisedExTerm{n, m, M})(t::Real,
     end
 
     if M <: AdjointMode
-                    U,    V    = Eq.FTFStore[1], Eq.FTFStore[2]
-                    TMP1, TMP2 = Eq.FTFStore[1], Eq.FTFStore[2]
-        dΛdx, dΛdy, dΩdx, dΩdy = Eq.FTFStore[3], Eq.FTFStore[4], Eq.FTFStore[5], Eq.FTFStore[6]
-                    u,    v    = Eq.FStore[1],   Eq.FStore[2]
-                    tmp1, tmp2 = Eq.FStore[1],   Eq.FStore[2]
-        dλdx, dλdy, dωdx, dωdy = Eq.FStore[3],   Eq.FStore[4],   Eq.FStore[5],   Eq.FStore[6]
+                    U,    V    = eq.FTFCache[1], eq.FTFCache[2]
+                    TMP1, TMP2 = eq.FTFCache[3], eq.FTFCache[4]
+        dΛdx, dΛdy, dΩdx, dΩdy = eq.FTFCache[5], eq.FTFCache[6], eq.FTFCache[7], eq.FTFCache[8]
+                    u,    v    = eq.FCache[1],   eq.FCache[2]
+                    tmp1, tmp2 = eq.FCache[3],   eq.FCache[4]
+        dλdx, dλdy, dωdx, dωdy = eq.FCache[5],   eq.FCache[6],   eq.FCache[7],   eq.FCache[8]
 
         # set mean to zero
         Λ[WaveNumber(0, 0)] = 0
@@ -110,29 +110,29 @@ function (eq::LinearisedExTerm{n, m, M})(t::Real,
         ddx!(dΩdx, Ω)
         ddy!(dΩdy, Ω)
 
-        # obtain velocity components. Set mean to zero
+        # obtain velocity components
         invlaplacian!(U,  dΩdy);  U  .*= -1
         invlaplacian!(V,  dΩdx)
 
         # inverse transform to physical space into temporaries
-        Eq.ifft!(u,    U)
-        Eq.ifft!(v,    V)
-        Eq.ifft!(dλdx, dΛdx); Eq.ifft!(dωdx, dΩdx)
-        Eq.ifft!(dλdy, dΛdy); Eq.ifft!(dωdy, dΩdy)
+        eq.ifft!(u,    U)
+        eq.ifft!(v,    V)
+        eq.ifft!(dλdx, dΛdx); eq.ifft!(dωdx, dΩdx)
+        eq.ifft!(dλdy, dΛdy); eq.ifft!(dωdy, dΩdy)
 
         # multiply in physical space
-        tmp1 .= u.*dλdx .+ v.*dλdy;       Eq.fft!(TMP1, tmp1)
-        tmp2 .= dλdx.*dωdy .- dλdy.*dωdx; Eq.fft!(TMP2, tmp2)
+        tmp1 .= u.*dλdx .+ v.*dλdy;       eq.fft!(TMP1, tmp1)
+        tmp2 .= dλdx.*dωdy .- dλdy.*dωdx; eq.fft!(TMP2, tmp2)
 
         # add or replace
-        add == (true ? (dΛdt .+= .- TMP1 .- invlaplacian!(U, TMP2))
-                     : (dΛdt  .= .- TMP1 .- invlaplacian!(U, TMP2)))
+        add == (true ? (dΛdt .+= TMP1 .+ invlaplacian!(U, TMP2))
+                     : (dΛdt  .= TMP1 .+ invlaplacian!(U, TMP2)))
     end
 
     # reset mean
     dΛdt[WaveNumber(0, 0)] = 0
 
-    return nothing
+    return dΛdt
 end
 
 
