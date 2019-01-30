@@ -1,3 +1,4 @@
+import Base.Threads: @threads, threadid, nthreads
 using FFTW
 
 export ForwardEquation, splitexim
@@ -53,10 +54,9 @@ function (Eq::ForwardExplicitTerm{n, m, FT})(t::Real,
     invlaplacian!(V, dΩdx)
 
     # inverse transform to physical space into temporaries
-    Eq.ifft!(u,    U)
-    Eq.ifft!(v,    V)
-    Eq.ifft!(dωdx, dΩdx)
-    Eq.ifft!(dωdy, dΩdy)
+    @threads for i = 1:4
+        Eq.ifft!(Eq.FCache[i], Eq.FTCache[i])
+    end
 
     # calculate β = Δx/u_max
     Eq.β[1] = (π/(m+1))/max(maximum(u), maximum(v))
