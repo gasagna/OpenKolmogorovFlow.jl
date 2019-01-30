@@ -4,8 +4,7 @@ using FFTW
 export ForwardEquation, splitexim
 
 # ~~~ Explicit Term of Forward Equations ~~~
-struct ForwardExplicitTerm{n, m, FT<:AbstractFTField,   F<:AbstractField,
-                                ITT<:InverseFFT!,     FTT<:ForwardFFT!}
+struct ForwardExplicitTerm{n, m, FT, F, ITT, FTT}
      FTCache::Vector{FT} # storage
       FCache::Vector{F}
        ifft!::ITT        # transforms
@@ -28,8 +27,8 @@ function ForwardExplicitTerm(n::Int,
     FCache  = [Field(m, S)      for i = 1:4]
 
     # transforms
+     fft! = ForwardFFT!( FCache[1], flags)
     ifft! = InverseFFT!(FTCache[1], flags)
-     fft! = ForwardFFT!(FCache[1], flags)
 
     # construct object. Initialise β to a small value, so we do a small first time step
     ForwardExplicitTerm{n, m, eltype(FTCache), eltype(FCache),
