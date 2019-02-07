@@ -1,20 +1,22 @@
 using OpenKolmogorovFlow
-using IMEXRKCB
+using Flows
+using FFTW
 using BenchmarkTools
 
 # parameters
 const Re = 40
 const kforcing = 4
-const n = 132 
+const n = 64
+const m = 96
 
 # get explicit and implicit parts
-Ld, Nd = imex(VorticityEquation(n, Re, kforcing; dealias=true))
+sys = Flows.System(splitexim(ForwardEquation(n, m, Re, kforcing, FFTW.MEASURE))...)
 
 # initial condition
-Ω₀ = FTField(n)
+Ω = FTField(n, m)
 
-# define scheme
-scheme = IMEXRKScheme(IMEXRK4R3R(IMEXRKCB4, false), Ω₀)
+# define method
+method = CB3R2R3e(Ω, :NORMAL)
 
 # measure time it takes to complete a step
-@btime step!($scheme, $Nd, $Ld, 0, 0.1, $Ω₀)
+@btime Flows.step!($method, $sys, 0, 0.001, $Ω, nothing)

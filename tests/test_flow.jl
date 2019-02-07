@@ -1,29 +1,23 @@
-using OpenKolmogorovFlow
-using Base.Test
-
 @testset "dissipation                            " begin
     # test on laminar flow
-    Re = rand()
+    Re = 1.234567
     kf = 4
-    @test_throws ArgumentError laminarflow(10, Re, 6)
-    Ω = laminarflow(10, Re, kf)
+    @test_throws ArgumentError laminarflow(2, 4, Re, 6)
+    
+    Ω = laminarflow(10, 20, Re, kf)
     @test dissrate(Ω, Re) ≈ Re/2/kf^2
 
-    # test on some other flows
-    n = 4
-    x, y = make_grid(n)
-
     # phase shift does not change dissipation
-    Ωa = FFT(Field(cos.(x.+y)))
-    Ωb = FFT(Field(sin.(x.+y)))
-    @test dissrate(Ωa, 1.0) == dissrate(Ωb, 1.0)
+    Ωa = FFT(Field(10, (x, y)->cos(x+y)), 5)
+    Ωb = FFT(Field(10, (x, y)->sin(x+y)), 5)
+    @test abs(dissrate(Ωa, 1.0) - dissrate(Ωb, 1.0)) < 4e-16
 
     # for any wave dissipation is 1/2/Re
-    d = n>>1 + 1
-    for j = -d+1:d, k=-d+1:d
+    d = 5
+    for j = -d:d, k=-d:d
         if !(j == 0 && k == 0)
             Re = randn()
-            Ω = FFT(Field(cos.(j.*x.+k.*y)))
+            Ω = FFT(Field(10, (x, y)->cos(j*x+k*y)), d)
             @test dissrate(Ω, Re) ≈ 1/2/Re
         end
     end

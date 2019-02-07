@@ -1,102 +1,104 @@
-using OpenKolmogorovFlow
-using Base.Test
-
-@testset "dot product                           " begin
-    x, y = make_grid(10)
+@testset "dot product                            " begin
+    n, m = 5, 10
+    x, y = make_grid(m)
 
     # tolerance on integrals
     TOL = 1e-14
 
     # init rng
-    srand(0)
+    Random.seed!(0)
 
     # all cosine waves fit properly on the grid
-    for j = -5:5, k =-5:5
+    for j = -n:n, k =-n:n
         a, b = rand(), rand()
-        u = a.*cos.(j.*x.+k.*y); U = FFT(Field(u))
-        v = b.*cos.(j.*x.+k.*y); V = FFT(Field(v))
-        j == k == 0 || @test abs(dot(U, V) - a*b*2π^2) < TOL
+        u = a.*cos.(j.*x.+k.*y); U = FFT(Field(u), n)
+        v = b.*cos.(j.*x.+k.*y); V = FFT(Field(v), n)
+        j == k == 0 || @test abs(dot(U, V) - a*b/2) < TOL
     end
 
-    # these does not fit on the grid, so it is zero
-    u = sin.(0.*x.+5.*y); U = FFT(Field(u))
-    v = sin.(0.*x.+5.*y); V = FFT(Field(v))
-    @test abs(dot(U, V) - 0) < TOL
-
-    u = sin.(5.*x.+0.*y); U = FFT(Field(u))
-    v = sin.(5.*x.+0.*y); V = FFT(Field(v))
-    @test abs(dot(U, V) - 0) < TOL
-
-    u = sin.(5.*x.+5.*y); U = FFT(Field(u))
-    v = sin.(5.*x.+5.*y); V = FFT(Field(v))
-    @test abs(dot(U, V) - 0) < TOL
-
     # orthogonal fields have zero dot product
-    u = sin.(1.*x.+1.*y); U = FFT(Field(u))
-    v = sin.(1.*x.+2.*y); V = FFT(Field(v))
-    @test abs(dot(U, V) -   0) < TOL
+    u = sin.(1.0*x.+1.0*y); U = FFT(Field(u), n)
+    v = sin.(1.0*x.+2.0*y); V = FFT(Field(v), n)
+    @test abs(dot(U, V) - 0) < TOL
 
-    u = cos.(5.*x.+1.*y) .+ sin.(4.*x.+1.*y); U = FFT(Field(u))
-    v = cos.(1.*x.+2.*y) .+ sin.(1.*x.+2.*y); V = FFT(Field(v))
-    @test abs(dot(U, V) -   0) < TOL
+    u = cos.(5.0*x.+1.0*y) .+ sin.(4.0*x.+1.0*y); U = FFT(Field(u), n)
+    v = cos.(1.0*x.+2.0*y) .+ sin.(1.0*x.+2.0*y); V = FFT(Field(v), n)
+    @test abs(dot(U, V) - 0) < TOL
 
     # count only what is not orthogonal
-    u = cos.(1.*x.+0.*y) .+ sin.(1.*x.+1.*y); U = FFT(Field(u))
-    v = cos.(1.*x.+0.*y) .+ sin.(1.*x.+2.*y); V = FFT(Field(v))
-    @test abs(dot(U, V) - 2π^2) < TOL
+    u = cos.(1.0*x.+0.0*y) .+ sin.(1.0*x.+1.0*y); U = FFT(Field(u), n)
+    v = cos.(1.0*x.+0.0*y) .+ sin.(1.0*x.+2.0*y); V = FFT(Field(v), n)
+    @test abs(dot(U, V) - 0.5) < TOL
 
-    u = cos.(1.*x.+0.*y) .+ sin.(1.*x.+1.*y); U = FFT(Field(u))
-    v = cos.(1.*x.+0.*y) .+ sin.(1.*x.+1.*y); V = FFT(Field(v))
-    @test abs(dot(U, V) - 2*2π^2) < TOL
+    u = cos.(1.0*x.+0.0*y) .+ sin.(1.0*x.+1.0*y); U = FFT(Field(u), n)
+    v = cos.(1.0*x.+0.0*y) .+ sin.(1.0*x.+1.0*y); V = FFT(Field(v), n)
+    @test abs(dot(U, V) - 2*0.5) < TOL
 
-    u = cos.(1.*x.+5.*y) .+ sin.(1.*x.+5.*y); U = FFT(Field(u))
-    v = cos.(1.*x.+5.*y) .+ sin.(1.*x.+5.*y); V = FFT(Field(v))
-    @test abs(dot(U, V) - 2*2π^2) < TOL
+    u = cos.(1.0*x.+5.0*y) .+ sin.(1.0*x.+5.0*y); U = FFT(Field(u), n)
+    v = cos.(1.0*x.+5.0*y) .+ sin.(1.0*x.+5.0*y); V = FFT(Field(v), n)
+    @test abs(dot(U, V) - 2*0.5) < TOL
 
-    u = 0.4*cos.(5.*x.+1.*y) + 0.4*sin.(5.*x.+2.*y); U = FFT(Field(u))
-    v = 0.3*cos.(5.*x.+1.*y) + 0.3*sin.(5.*x.+2.*y); V = FFT(Field(v))
-    @test abs(dot(U, V) - 0.24*2π^2) < TOL
+    u = 0.4*cos.(5.0*x.+1.0*y) + 0.4*sin.(5.0*x.+2.0*y); U = FFT(Field(u), n)
+    v = 0.3*cos.(5.0*x.+1.0*y) + 0.3*sin.(5.0*x.+2.0*y); V = FFT(Field(v), n)
+    @test abs(dot(U, V) - 0.24*0.5) < TOL
 end
 
-@testset "dot product performance               " begin
-    n = 100
-    u = randn(n, n); U = FFT(Field(u))
-    v = randn(n, n); V = FFT(Field(v))
-    @test minimum([@elapsed dot(U, V) for i = 1:1000000]) < 4.5*10.0^(-6)
+@testset "dot product performance                " begin
+    m, n = 49, 49
+    U = FFT(Field(m, (x, y)->rand()), n)
+    V = FFT(Field(m, (x, y)->rand()), n)
+    @test minimum([@elapsed dot(U, V) for i = 1:100000]) < 8*10.0^(-6)
 end
 
 @testset "norm                                   " begin
-    x, y = make_grid(10)
+    n, m = 10, 10
+    x, y = make_grid(m)
 
     # tolerance on integrals
     TOL = 1e-14
 
-    for (val, u) in [(sqrt(2)*π, sin.(1.*x.+1.*y)),
-                     (2*π,       cos.(1.*x.+2.*y) .+ sin.(1.*x.+2.*y)),
-                     (2*π,       cos.(0.*x.+5.*y) .+ sin.(1.*x.+5.*y)),
-                     (sqrt(2)*π, cos.(0.*x.+5.*y) .+ sin.(0.*x.+5.*y))]
-        U = FFT(Field(u))
-        @test abs(norm(U) - val) < TOL
+    for (val, u) in [(sqrt(2)*π, sin.(1.0*x.+1.0*y)),
+                     (2*π,       cos.(1.0*x.+2.0*y) .+ sin.(1.0*x.+2.0*y)),
+                     (2*π,       cos.(0.0*x.+5.0*y) .+ sin.(1.0*x.+5.0*y)),
+                     (2*π,       cos.(0.0*x.+5.0*y) .+ sin.(0.0*x.+5.0*y))]
+        U = FFT(Field(u), n)
+        @test abs(norm(U) - val/2π) < TOL
         @test_throws ArgumentError norm(U, 1)
     end
 end
 
 @testset "diff                                   " begin
-    x, y = make_grid(10)
+    n, m = 5, 10
+    x, y = make_grid(m)
 
     # tolerance on integrals
     TOL = 1e-14
 
-    u = sin.(1.*x.+1.*y); U = FFT(Field(u))
-    v = sin.(1.*x.+1.*y); V = FFT(Field(v))
-    @test dotdiff(U, V) == 0
+    u = sin.(1.0*x.+1.0*y); U = FFT(Field(u), n)
+    v = sin.(1.0*x.+1.0*y); V = FFT(Field(v), n)
+    @test normdiff(U, V) == 0
 
-    u = 2*sin.(1.*x.+1.*y); U = FFT(Field(u))
-    v =   sin.(1.*x.+1.*y); V = FFT(Field(v))
-    @test dotdiff(U, V) == 2π^2
+    u = 2*sin.(1.0*x.+1.0*y); U = FFT(Field(u), n)
+    v =   sin.(1.0*x.+1.0*y); V = FFT(Field(v), n)
+    @test abs(normdiff(U, V) - 0.5) < TOL
+end
 
-    # corner case
-    u = 2*sin.(5.*x.+1.*y); U = FFT(Field(u))
-    v =   sin.(5.*x.+1.*y); V = FFT(Field(v))
-    @test dotdiff(U, V) == 2π^2
+@testset "minnormdiff                            " begin
+    n, m = 41, up_dealias_size(41)
+    U = FFT(Field(randn(2m+2, 2m+2)), n)
+    V = copy(U)
+
+    # number of shifts along x to test
+    TMP = copy(U)
+    N = 20
+
+    # apply random shift to V, then min distance should be zero
+    s = 3*2*π/20
+    m = 2
+    shift!(U, s, m)
+
+    dmin, (smin, mmin) = minnormdiff(V, U, TMP, N)
+    @test mmin == m
+    @test smin == s
+    @test normdiff(shift!(V, smin, mmin), U) < 1e-16
 end

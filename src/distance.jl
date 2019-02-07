@@ -1,21 +1,32 @@
 export DistanceCache, distance!
 
 # Storage type to assist the computation of distance between two vorticity field
-struct DistanceCache{m, T, S<:Field{m, T}, D<:FTField{m, Complex{T}}}
-            r::S                    # the cross correlation field
-       r_line::Vector{T}            # cross correlation along Δy = m*π/4
-            R::D                    # the cross correlation transform
-       R_line::Vector{Complex{T}}   # Fourier series or r_line
-         plan                       # 2d plan for FFT
-    plan_line                       # 1d plan for FFT
-    function DistanceCache(m::Int, ::Type{T}=Float64, flags::UInt32=FFTW.PATIENT) where {T}
-        # we want to index exact location for vertical integer shifts
-        rem(m, 4) == 0 || error("cache size / 4 must be an even number")
-        r, R = Field(m, T), FTField(m, Complex{T})
-        r_line, R_line = zeros(T, m), zeros(Complex{T}, m)
-             plan = plan_brfft(R.data,  m, [2, 1], flags=flags) # inverse transform
-        plan_line = plan_rfft(r_line,              flags=flags) # forward transform
-        new{m, T, typeof(r), typeof(R)}(r, r_line, R, R_line, plan, plan_line)
+struct DistanceCache{nc, T, F<:Field{nc, T}, FT<:FTField{nc, nc, T}}
+         r::F                    # the cross correlation field in physical space
+    r_line::Vector{T}            # cross correlation along Δy = nc*π/4
+         R::FT                   # the cross correlation in Fourier space
+    R_line::Vector{Complex{T}}   # Fourier series or r_line
+       fft                       # 2d fft
+      plan                       # 1d fft plan
+    function DistanceCache(nc::Int, ::Type{T}=Float64, flags=FFTW.EXHAUSTIVE) where {T}
+        # number of points in the physical grid
+        M = 2*nc + 2
+        
+        # we want to index exact location for vertical integer
+        # shifts, so grid size must be divisible by 4
+        rem(M, 4) == 0 || error("cache size must be divisible by four")
+        
+        # store cross correlation of the two velocity fields
+        # in physical and Fourier space
+        r, R = Field(nc, T), FTField(nc, nc, T)
+
+        # cross correlation along a line
+        r_line, R_line = zeros(T, M), zeros(Complex{T}, nc+2)
+
+        # define plans and transforms
+         fft = ForwardFFT!(r, flags)
+        plan = plan_rfft(r_line, flags=flags) # forward transform
+        new{nc, T, typeof(r), typeof(R)}(r, r_line, R, R_line, fft, plan)
     end
 end
 
@@ -47,69 +58,81 @@ where `nc` is the size of the grid where the correlation function is evaluated
 on. This can be the same size as the fields `Ω₁` and `Ω₂` above, or lower, for
 faster, but maybe less accurate calculations. The number `nc/4` must be even.
 """
-function distance!(Ω₁::FTField{n}, Ω₂::FTField{n}, cache::DistanceCache{nc, T}) where {n, nc, T}
+function distance!(Ω₁::FTField{n, m, T}, Ω₂::FTField{n, m, T}, cache::DistanceCache{nc, T}) where {n, m, nc, T}
     nc ≤ n || throw(ArgumentError("cache size must be lower or equal that field size"))
-    _evalconjprod!(Ω₁, Ω₂, cache)                                # evaluate product
-    unsafe_execute!(cache.plan, cache.R.data, cache.r.data)      # inverse transform
-    s_opt, m_opt, r_opt = _peakdetect(cache)               # find peak
-    return norm(Ω₁)^2 + norm(Ω₂)^2 - 8*π^2*r_opt, (s_opt, m_opt) # apply definition
+    
+    # evaluate product in fourier space
+    _evalconjprod!(Ω₁, Ω₂, cache.R)
+
+    # transform cross correlation to physical space
+    cache.fft(cache.R, cache.r)
+
+    # the find correlation peak, where distance is minimum
+    s_opt, m_opt, r_opt = _peakdetect(cache)
+
+    # return minimum distance and the shifts to obtain it
+    return norm(Ω₁)^2 + norm(Ω₂)^2 - 8*π^2*r_opt, (s_opt, m_opt)
 end
 
 
 # ~~~~ Below is the private interface, mainly helper functions ~~~
 
-# Same size, use broadcasting
-_evalconjprod!(Ω₁::FTField{n}, Ω₂::FTField{n}, cache::DistanceCache{n}) where {n} =
-    (cache.R .= conj.(Ω₁).*Ω₂; nothing)
-
-# Different size, use indexing
-function _evalconjprod!(Ω₁::FTField{n}, Ω₂::FTField{n}, cache::DistanceCache{nc}) where {nc, n}
-    d = nc>>1
+# Evaluate product of two fields in Fourier space, 
+# obtaining the cross correlation R in Fourier space
+function _evalconjprod!(Ω₁::FTField,
+                        Ω₂::FTField,
+                         R::FTField{nc}) where {nc}
+    R .= 0
     @inbounds begin
-        for j = 0:d, k = -d+1:d
-            cache.R[k, j] = conj(Ω₁[k, j])*Ω₂[k, j]
+        for j = 0:nc, k = -nc:nc
+            R[WaveNumber(k, j)] = conj(Ω₁[WaveNumber(k, j)])*Ω₂[WaveNumber(k, j)]
         end
-        # satisfy symmetries
-        for k = 0:d
-            cache.R[k, d] = conj(cache.R[-k, d])
-        end
-        cache.R[0, d] = 2*real(cache.R[0, d])
-        cache.R[d, 0] = 2*real(cache.R[d, 0])
-        cache.R[d, d] = 2*real(cache.R[d, d])
     end
-end
-
-# Copy value of correlation function at `Δy = m_opt*π/4` into a temporary
-# buffer and compute its Fourier transform, so that we can use it for
-# interpolation and for finding the correlation peak.
-function _fillline!(cache::DistanceCache{nc}, m_opt::Int) where {nc}
-    I = div(m_opt, 2)*div(nc, 4)
-    @inbounds @simd for j = 0:nc-1 # copy line
-        cache.r_line[j+1] = cache.r[I, j]
-    end
-    unsafe_execute!(cache.plan_line, cache.r_line, cache.R_line)
-    cache.R_line .*= 1/nc
+    R[WaveNumber(0, 0)] = 0
+    
     return nothing
 end
 
 # Find peak of correlation function for y shifts m = 0, 1, 2 and 3.
 function _peakdetect(cache::DistanceCache{nc}) where {nc}
-    # scan correlation data to find maximum
-    r_opt, m_opt, s_opt_int = cache.r[0, 0], 0, 0
-    @inbounds begin
-        for m = (0, 2, 4, 6), s = 0:nc-1
-            p = cache.r[div(m, 2)*div(nc, 4), s]
-            if p > r_opt
-                r_opt, m_opt, s_opt_int = p, m, s
-            end
-        end
-    end
-    # now get line of the optimum and compute FFT
-    _fillline!(cache, m_opt)
+    # scan correlation data to find maximum for discrete vertical shifts
+    M  = div(2*nc+2, 4)
+    (r_opt_0, s_opt_int_0) = findmax(view(cache.r, 0*M + 1, :))
+    (r_opt_2, s_opt_int_2) = findmax(view(cache.r, 1*M + 1, :))
+    (r_opt_4, s_opt_int_4) = findmax(view(cache.r, 2*M + 1, :))
+    (r_opt_6, s_opt_int_6) = findmax(view(cache.r, 3*M + 1, :))
+
+    # this calculates the maximum by r_opt
+    ((r_opt, m_opt), s_opt_int) = findmax(((r_opt_0, 0, s_opt_int_0),
+                                           (r_opt_2, 1, s_opt_int_2),
+                                           (r_opt_4, 2, s_opt_int_4),
+                                           (r_opt_6, 3, s_opt_int_6)))
+
+    # Copy value of correlation function at `Δy = m_opt*π/4` into a temporary
+    # buffer and compute its Fourier transform, so that we can use it for
+    # interpolation and for finding the correlation peak.
+    cache.r_line .= view(cache.r, m_opt*M + 1, :)
+    unsafe_execute!(cache.plan, cache.r_line, cache.R_line)
+    cache.R_line .*= 1/length(cache.r_line)
+
     # use newton method to find correlation peak accurately
-    s_opt, r_max = _peroptim(cache.R_line, s_opt_int/nc*2π)
+    s_opt, r_max = _peroptim(cache.R_line, 2π/(2*nc+2)*s_opt_int)
+
     # return x shift, y shift and correlation maximum
     return s_opt, m_opt, r_max
+end
+
+# Use Newton method to find an extremum of the periodic function defined
+# by the Fourier Series `R` near `x`. We assume that this is going to
+# converge in less than 10 iteration, otherwise we raise an error.
+function _peroptim(R::Vector{<:Complex}, x::Real, stol::Real=1e-12)
+    for i = 1:10 # this must end
+        val, grad, hess = _perinterp(R, x)
+        Δ = grad/hess
+        x = x - Δ
+        abs(Δ) < stol && return (x, _perinterp(R, x)[1])
+    end
+    throw(error("iterations did not converge"))
 end
 
 # Interpolate periodic function at `x` from its Fourier series `R`. Returns
@@ -133,17 +156,4 @@ function _perinterp(R::Vector{Complex{T}}, x::Real) where {T}
         hess = 2*hess - real(R[lX])*cos((lX-1)*x)*(lX-1)^2
     end
     val, grad, hess
-end
-
-# Use Newton method to find an extremum of the periodic function defined
-# by the Fourier Series `R` near `x`. We assume that this is going to
-# converge in less than 10 iteration, otherwise we raise an error.
-function _peroptim(R::Vector{<:Complex}, x::Real, stol::Real=1e-12)
-    for i = 1:10 # this must end
-        val, grad, hess = _perinterp(R, x)
-        Δ = grad/hess
-        x = x - Δ
-        abs(Δ) < stol && return (x, _perinterp(R, x)[1])
-    end
-    throw(error("iterations did not converge"))
 end

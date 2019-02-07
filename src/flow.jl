@@ -1,14 +1,17 @@
-export laminarflow, dissrate
+export laminarflow, dissrate, powinput
 
 # Returns the vorticity field of the laminar flow.
-function laminarflow(n::Int, Re::Real, kforcing::Int=4)
-    0 ≤ kforcing ≤ n>>1  ||
-        throw(ArgumentError("forcing wave number must be in [0, n/2]"))
-    Ω = FTField(n)
-    Ω[-kforcing, 0] = -Re/kforcing/2
-    Ω[ kforcing, 0] = -Re/kforcing/2
-    Ω
+function laminarflow(n::Int, m::Int, Re::Real, kforcing::Int=4)
+    0 ≤ kforcing ≤ n  ||
+        throw(ArgumentError("forcing wave number must be in [0, n]"))
+    Ω = FTField(n, m)
+    Ω[WaveNumber(-kforcing, 0)] = -Re/kforcing/2
+    Ω[WaveNumber( kforcing, 0)] = -Re/kforcing/2
+    return Ω
 end
 
 # Energy dissipation rate density associated to vorticity field `Ω`
-dissrate(Ω::FTField{n}, Re::Real) where {n} = (@Σ_jk n abs2(Ω[jk]))/Re
+dissrate(Ω::FTField{n, m}, Re::Real) where {n, m} = norm(Ω)^2/Re
+
+# power input 
+powinput(Ω::FTField, kf::Int=4) = -imag(im * Ω[WaveNumber(kf, 0)]/kf)
