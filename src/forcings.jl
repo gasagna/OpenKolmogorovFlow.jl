@@ -36,4 +36,4 @@ DissRateGradientForcing(n::Int, Re::Real) = DissRateGradientForcing{n}(Re)
                                 Ω::FT,
                                 Λ::FT,
                              dΛdt::FT) where {n, FT<:AbstractFTField{n}} = 
-    (dΛdt .+= 2.0.*Ω./f.Re; dΛdt)
+    (dΛdt .-= 2.0.*Ω./f.Re; dΛdt)
