@@ -125,8 +125,11 @@ function (eq::LinearisedExTerm{n, m, M})(t::Real,
         tmp2 .= dλdx.*dωdy .- dλdy.*dωdx; eq.fft!(TMP2, tmp2)
 
         # add or replace
-        add == (true ? (dΛdt .+= TMP1 .+ invlaplacian!(U, TMP2))
-                     : (dΛdt  .= TMP1 .+ invlaplacian!(U, TMP2)))
+        if add == true
+            dΛdt .+= TMP1 .+ invlaplacian!(U, TMP2)
+        else
+            dΛdt  .= TMP1 .+ invlaplacian!(U, TMP2)
+        end
     end
 
     # reset mean
