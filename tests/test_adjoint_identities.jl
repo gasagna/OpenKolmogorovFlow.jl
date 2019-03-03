@@ -34,17 +34,17 @@
     F = ForwardEquation(n, m, Re, 4, FFTW.ESTIMATE)
 
     # flow
-    ϕ = flow(splitexim(F)..., CB3R2R3e(FTField(n, m), :NORMAL), TimeStepConstant(Δt))
+    ϕ = flow(splitexim(F)..., CNRK2(FTField(n, m), :NORMAL), TimeStepConstant(Δt))
 
     # define the stage cache
-    cache = RAMStageCache(4, FTField(n, m))
+    cache = RAMStageCache(2, FTField(n, m))
 
     # proceed forward, then store forward solution for a small bit
     ϕ(Ω, (0, 10)); ϕ(Ω, (0, 10), reset!(cache))
 
     # construct linearised propagators
-    ψ_D = flow(splitexim(LD)..., CB3R2R3e(FTField(n, m), :TAN), TimeStepFromCache())
-    ψ_A = flow(splitexim(LA)..., CB3R2R3e(FTField(n, m), :ADJ), TimeStepFromCache())
+    ψ_D = flow(splitexim(LD)..., CNRK2(FTField(n, m), :TAN), TimeStepFromCache())
+    ψ_A = flow(splitexim(LA)..., CNRK2(FTField(n, m), :ADJ), TimeStepFromCache())
     
     # verify identity
     v1 = dot(A, ψ_A(copy(B), copy(cache)))
