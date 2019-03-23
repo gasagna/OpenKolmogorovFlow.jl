@@ -4,7 +4,9 @@ import Flows
 import LinearAlgebra: mul!
 
 # ~~~ THE VISCOUS TERM OF THE GOVERNING EQUATIONS ~~~
-struct ImplicitTerm
+
+# allow changin the Reynolds number more easily
+mutable struct ImplicitTerm
     Re::Float64
 end
 
