@@ -81,10 +81,9 @@ function (eq::LinearisedExTerm{n, m, M})(t::Real,
         invlaplacian!(V′, dΛdx)
 
         # inverse transform to physical space into temporaries
-        eq.ifft!(u,      U) ; eq.ifft!(u′,    U′)
-        eq.ifft!(v,      V) ; eq.ifft!(v′,    V′)
-        eq.ifft!(dλdx, dΛdx); eq.ifft!(dωdx, dΩdx)
-        eq.ifft!(dλdy, dΛdy); eq.ifft!(dωdy, dΩdy)
+        @threads for i = 1:8
+            eq.ifft!(eq.FCache[i], eq.FTFCache[i])
+        end
 
         # multiply in physical space, overwriting u, then come back
         u .= .-u.*dλdx .- v.*dλdy .- u′.*dωdx .- v′.*dωdy
@@ -115,14 +114,17 @@ function (eq::LinearisedExTerm{n, m, M})(t::Real,
         invlaplacian!(V,  dΩdx)
 
         # inverse transform to physical space into temporaries
-        eq.ifft!(u,    U)
-        eq.ifft!(v,    V)
-        eq.ifft!(dλdx, dΛdx); eq.ifft!(dωdx, dΩdx)
-        eq.ifft!(dλdy, dΛdy); eq.ifft!(dωdy, dΩdy)
+        @threads for i in [1, 2, 5, 6, 7, 8]
+            eq.ifft!(eq.FCache[i], eq.FTFCache[i])
+        end
 
         # multiply in physical space
-        tmp1 .= u.*dλdx .+ v.*dλdy;       eq.fft!(TMP1, tmp1)
-        tmp2 .= dλdx.*dωdy .- dλdy.*dωdx; eq.fft!(TMP2, tmp2)
+        tmp1 .= u.*dλdx .+ v.*dλdy
+        tmp2 .= dλdx.*dωdy .- dλdy.*dωdx
+
+        @threads for i in [3, 4]
+            eq.fft!(eq.FTFCache[i], eq.FCache[i])
+        end
 
         # add or replace
         if add == true
