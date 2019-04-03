@@ -75,9 +75,14 @@ end
 
 
 # ~~~ SOLVER OBJECT FOR THE GOVERNING EQUATIONS ~~~
-struct ForwardEquation{n, m, IT<:ImplicitTerm, ET<:ForwardExplicitTerm}
+struct ForwardEquation{n, m, 
+                       IT<:ImplicitTerm, 
+                       ET<:ForwardExplicitTerm,
+                       GT<:AbstractForcing{n}}
     imTerm::IT
     exTerm::ET
+    forcing::GT  # extra forcing
+
 end
 
 # outer constructor: main entry point
@@ -86,10 +91,14 @@ function ForwardEquation(n::Int,
                          Re::Real,
                          kforcing::Int=4,
                          flags::UInt32=FFTW.EXHAUSTIVE,
+                         forcing::AbstractForcing=DummyForcing(n),
                          ::Type{S}=Float64) where {S<:Real}
     imTerm = ImplicitTerm(Re)
     exTerm = ForwardExplicitTerm(n, m, kforcing, flags, S)
-    ForwardEquation{n, m, typeof(imTerm), typeof(exTerm)}(imTerm, exTerm)
+    ForwardEquation{n, m, 
+                    typeof(imTerm), 
+                    typeof(exTerm), 
+                    typeof(forcing)}(imTerm, exTerm, forcing)
 end
 
 # evaluate right hand side of governing equations
@@ -97,7 +106,20 @@ end
                             Ω::FTField{n, m},
                             dΩdt::FTField{n, m}) where {n, m} =
     (mul!(dΩdt, eq.imTerm, Ω);
-      eq.exTerm(t, Ω, dΩdt, true))
+      eq.exTerm(t, Ω, dΩdt, true);
+      eq.forcing(t, Ω, dΩdt)) # note forcing always adds to dVdt
+  
 
-# obtain two components
-splitexim(eq::ForwardEquation) = (eq.exTerm, eq.imTerm)
+# /// SPLIT EXPLICIT AND IMPLICIT PARTS ///
+function splitexim(eq::ForwardEquation{n, m}) where {n, m}
+    function wrapper(t::Real,
+                     Ω::FTField{n, m},
+                  dΩdt::FTField{n, m},
+                   add::Bool=false)
+        eq.exTerm(t, Ω, dΩdt, add)
+        eq.forcing(t, Ω, dΩdt) # note forcing always adds to dΛdt
+        return dΩdt
+    end
+
+    return wrapper, eq.imTerm
+end

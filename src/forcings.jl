@@ -35,8 +35,19 @@ end
 WaveNumberForcing(n::Int, k::Int, j::Int, f::T) where {T<:Number} = 
     WaveNumberForcing{n, T}(k, j, f)
 
+# provide multiple methods for the same function
+(f::WaveNumberForcing{n})(t::Real,
+                          Ω::FT,
+                       dΩdt::FT) where {n, FT<:AbstractFTField{n}} = f(t, Ω, Ω, dΩdt)
+
+(f::WaveNumberForcing{n})(t::Real,
+                          Ω::FT,
+                          Λ::FT,
+                       dΛdt::FT) where {n, FT<:AbstractFTField{n}} = f(t, Ω, Ω, Λ, dΛdt)
+                          
 function (f::WaveNumberForcing{n})(t::Real,
                                    Ω::FT,
+                                dΩdt::FT,
                                    Λ::FT,
                                 dΛdt::FT) where {n, FT<:AbstractFTField{n}}
                  dΛdt[WaveNumber( f.k, f.j)] +=      f.val/2
