@@ -20,7 +20,7 @@ function radial_mean!(f, Ω::FTField{n, m}, out::Vector, counts::Vector{Int}) wh
             # increment value and count except for `(0, 0)`
             # mode, for which `nint=0`.
             if nint > 0 && nint ≤ n
-                   out[nint] += f(Ω[k, j])
+                   out[nint] += f(Ω[WaveNumber(k, j)])
                 counts[nint] += 1
             end
         end
