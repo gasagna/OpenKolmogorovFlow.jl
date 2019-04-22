@@ -1,6 +1,9 @@
 # ////// FORCINGS FOR THE DIRECT, TANGENT OR ADJOINT EQUATIONS//////
 
-export DummyForcing, DissRateGradientForcing, WaveNumberForcing
+export DummyForcing,
+       DissRateGradientForcing,
+       WaveNumberForcing,
+       ReForcing
 
 abstract type AbstractForcing{n} end
 
@@ -67,3 +70,24 @@ DissRateGradientForcing(n::Int, Re::Real) = DissRateGradientForcing{n}(Re)
                                 Λ::FT,
                              dΛdt::FT) where {n, FT<:AbstractFTField{n}} = 
     (dΛdt .-= 2.0.*Ω./f.Re; dΛdt)
+
+# ////// FORCING FOR TANGENT EQUATION FOR PERTURBATION WRT TO RE //////
+struct ReForcing{n, FT} <: AbstractForcing{n} 
+     Re::Float64
+    TMP::FT
+end
+
+ReForcing(n::Int, m::Int, Re::Real) = ReForcing(Re, FTField(n, m))
+ReForcing(Re::Real, TMP::FTField{n}) where {n} = ReForcing{n, typeof(TMP)}(Re, TMP)
+
+(f::ReForcing{n})(t::Real,
+                  Ω::FT,
+                  Λ::FT,
+               dΛdt::FT) where {n, FT<:AbstractFTField{n}} = 
+    (dΛdt .-= laplacian!(f.TMP, Ω)./(f.Re.^2); dΛdt)
+
+(f::ReForcing{n})(t::Real,
+                  Ω::FT,
+               dΩdt::FT,
+                  Λ::FT,
+               dΛdt::FT) where {n, FT<:AbstractFTField{n}} = f(t, Ω, Λ, dΛdt)
