@@ -1,6 +1,7 @@
 export shift!, xshift!, yshift!
 
 function xshift!(U::FTField{n}, s::Real) where {n}
+    (s == 0) && return U
     @inbounds for j = 0:n
         # precompute this, since it's expensive
         val = cis(j*s)
@@ -12,6 +13,7 @@ function xshift!(U::FTField{n}, s::Real) where {n}
 end
 
 function yshift!(U::FTField{n}, m::Int) where {n}
+    (m == 0) && return U
     @inbounds for k = -n:n
         # precompute this, since it's expensive. Note also this
         # assumes that kf = 4
