@@ -1,4 +1,4 @@
-export shift!, xshift!, yshift!
+export shift!, xshift!, yshift!, yshiftreflect!
 
 function xshift!(U::FTField{n}, s::Real) where {n}
     (s == 0) && return U
@@ -20,6 +20,18 @@ function yshift!(U::FTField{n}, m::Int) where {n}
         val = cis(k*m*π/2)
         @simd for j = 0:n
             U[WaveNumber(k, j)] *= val
+        end
+    end
+    return U
+end
+
+function yshiftreflect!(U::FTField{n}) where {n}
+    @inbounds for k = -n:n
+        # precompute this, since it's expensive. Note also this
+        # assumes that kf = 4
+        val = cis(k*π/4)
+        @simd for j = 0:n
+            U[WaveNumber(k, j)] *= -val
         end
     end
     return U
