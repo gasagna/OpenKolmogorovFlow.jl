@@ -3,7 +3,8 @@
 export DummyForcing,
        DissRateGradientForcing,
        WaveNumberForcing,
-       ReForcing
+       ReForcing,
+       SteadyForcing
 
 abstract type AbstractForcing{n} end
 
@@ -27,6 +28,20 @@ DummyForcing(n::Int) = DummyForcing{n}()
                  dΩdt::FT,
                     Λ::FT,
                  dΛdt::FT) where {n, FT<:AbstractFTField{n}} = dΛdt
+
+# ////// GENERIC FORCING   //////
+ struct SteadyForcing{n, FT} <: AbstractForcing{n} 
+    f::FT
+    SteadyForcing(h::FT) where {n, FT<:AbstractFTField{n}} = new{n, FT}(h)
+end
+
+# provide multiple methods for the same function
+function (f::SteadyForcing{n})(t::Real,
+                               Ω::FT,
+                            dΩdt::FT) where {n, FT<:AbstractFTField{n}} 
+    dΩdt .+= f.f
+    return dΩdt
+end
 
 # ////// FORCING AT ONE SPECIFIC WAVENUMBER  //////
 struct WaveNumberForcing{n, T} <: AbstractForcing{n} 
