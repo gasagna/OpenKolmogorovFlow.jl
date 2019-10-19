@@ -112,7 +112,7 @@ Base.copy(U::FTField) = (V = similar(U); V .= U; V)
     @inbounds begin
         OUT .= 0
         for j = 0:p, k = -p:p
-            OUT[k, j] = U[k, j]
+            OUT[WaveNumber(k, j)] = U[WaveNumber(k, j)]
         end
     end
     OUT
