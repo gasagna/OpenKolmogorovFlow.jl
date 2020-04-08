@@ -14,9 +14,9 @@
     # get explicit and implicit parts
     f = ForwardEquation(n, m, Re, kforcing)
 
-    for (method, elaps_exp) in [(CNRK2(   Ω, :NORMAL), 0.050),
-                                (CB3R2R3e(Ω, :NORMAL), 0.115),
-                                (CB3R2R3c(Ω, :NORMAL), 0.115)]
+    for (method, elaps_exp) in [(CNRK2(   Ω), 0.050),
+                                (CB3R2R3e(Ω), 0.115),
+                                (CB3R2R3c(Ω), 0.115)]
 
         # define integrator
         ϕ = flow(splitexim(f)..., method, TimeStepConstant(0.01))

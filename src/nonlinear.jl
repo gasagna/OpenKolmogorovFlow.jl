@@ -17,14 +17,15 @@ end
 function ForwardExplicitTerm(n::Int,
                              m::Int,
                              kforcing::Int,
+                             α::Real,
                              flags::UInt32,
                              ::Type{S}) where {S}
     # stupidity check
     m ≥ n || throw(ArgumentError("`m` must be bigger than `n`, got `n, m= $n, $m`. Are you sure?"))
 
     # real fields have larger size `m`
-    FTCache = [FTField(n, m, S) for i = 1:4]
-    FCache  = [Field(m, S)      for i = 1:4]
+    FTCache = [FTField(n, m, S, α) for i = 1:4]
+    FCache  = [Field(m, S)         for i = 1:4]
 
     # transforms
      fft! = ForwardFFT!( FCache[1], flags)
@@ -90,11 +91,12 @@ function ForwardEquation(n::Int,
                          m::Int,
                          Re::Real,
                          kforcing::Int=4,
+                         α::Real=1,
                          flags::UInt32=FFTW.EXHAUSTIVE,
                          forcing::AbstractForcing=DummyForcing(n),
                          ::Type{S}=Float64) where {S<:Real}
     imTerm = ImplicitTerm(Re)
-    exTerm = ForwardExplicitTerm(n, m, kforcing, flags, S)
+    exTerm = ForwardExplicitTerm(n, m, kforcing, α, flags, S)
     ForwardEquation{n, m, 
                     typeof(imTerm), 
                     typeof(exTerm), 

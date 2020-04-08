@@ -5,7 +5,7 @@ using FFTW
 using LinearAlgebra
 using OpenKolmogorovFlow
 
-include("test_adjoint_identities.jl")
+# include("test_adjoint_identities.jl")
 include("test_allocation.jl")
 include("test_broadcast.jl")
 # include("test_distance.jl")

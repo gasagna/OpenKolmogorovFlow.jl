@@ -18,25 +18,26 @@ Base.IndexStyle(::Type{<:AbstractFTField}) = IndexLinear()
 # ~~~ MAIN TYPE ~~~
 struct FTField{n, m, T<:Real, M<:AbstractMatrix{Complex{T}}} <: AbstractFTField{n, m, T}
     data::M
+       α::Float64
     # pass field sizes and data type
-    function FTField{n, m, T}() where {n, m, T}
+    function FTField{n, m, T}(α::Real = 1) where {n, m, T}
         m ≥ n || throw(ArgumentError("m can't be smaller than n"))
         data = zeros(Complex{T}, 2m+2, m+2)
-        new{n, m, T, typeof(data)}(data)
+        new{n, m, T, typeof(data)}(data, Float64(α))
     end
     # pass the data over the larger grid, and the actual largest wave number
-    function FTField(input::AbstractMatrix{Complex{T}}, n::Int) where {T<:Real}
+    function FTField(input::AbstractMatrix{Complex{T}}, n::Int, α::Real = 1) where {T<:Real}
         _checksize(input)
         # get largest wave number
         m = size(input, 1) >> 1 - 1
         m ≥ n || throw(ArgumentError("n can't be larger than m"))
         # instantiate object
-        new{n, m, T, typeof(input)}(input)
+        new{n, m, T, typeof(input)}(input, α)
     end
 end
 
 # OUTER CONSTRUCTORS
-FTField(n::Int, m::Int, ::Type{T}=Float64) where {T} = FTField{n, m, T}()
+FTField(n::Int, m::Int, ::Type{T}=Float64, α::Real=1) where {T} = FTField{n, m, T}(α)
 
 # size checker
 function _checksize(data::AbstractMatrix{<:Complex})

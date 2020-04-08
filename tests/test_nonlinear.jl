@@ -16,7 +16,7 @@
     f = ForwardEquation(n, m, Re, kforcing)
 
     # define integrator
-    ϕ = flow(splitexim(f)..., CB3R2R3e(Ω, :NORMAL), TimeStepConstant(0.01))
+    ϕ = flow(splitexim(f)..., CB3R2R3e(Ω), TimeStepConstant(0.01))
 
     # start from some non zero initial condition
     Ω .= 0.01; 
