@@ -1,12 +1,12 @@
 export laminarflow, dissrate, powinput
 
 # Returns the vorticity field of the laminar flow.
-function laminarflow(n::Int, m::Int, Re::Real, kforcing::Int=4, α::Real=1)
+function laminarflow(n::Int, m::Int, Re::Real, kforcing::Int=4, α::Real=1, γ::Real=1)
     0 ≤ kforcing ≤ n  ||
         throw(ArgumentError("forcing wave number must be in [0, n]"))
     Ω = FTField(n, m, Float64, α)
-    Ω[WaveNumber(-kforcing, 0)] = -Re/kforcing/2
-    Ω[WaveNumber( kforcing, 0)] = -Re/kforcing/2
+    Ω[WaveNumber(-kforcing, 0)] = -γ*Re/kforcing/2
+    Ω[WaveNumber( kforcing, 0)] = -γ*Re/kforcing/2
     return Ω
 end
 

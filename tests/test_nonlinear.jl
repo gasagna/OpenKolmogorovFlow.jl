@@ -8,12 +8,14 @@
     # take a Re and a forcing wave number
     Re = 1.2345678
     kforcing = 4
+    α = 1.1
+    γ = 0.9
 
     # initial condition
     Ω = FTField(n, m)
 
     # get explicit and implicit parts
-    f = ForwardEquation(n, m, Re, kforcing)
+    f = ForwardEquation(n, m, Re, kforcing, α, γ)
 
     # define integrator
     ϕ = flow(splitexim(f)..., CB3R2R3e(Ω), TimeStepConstant(0.01))
@@ -29,5 +31,5 @@
     ϕ(Ω, (0, 50),  mon)
 
     # test final value is that predicted by explicit equation
-    @test normdiff(samples(mon)[end], laminarflow(n, m, Re, kforcing)) < 1e-15
+    @test normdiff(samples(mon)[end], laminarflow(n, m, Re, kforcing, α, γ)) < 1e-15
 end

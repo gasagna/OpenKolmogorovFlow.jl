@@ -10,6 +10,7 @@ struct ForwardExplicitTerm{n, m, FT, F, ITT, FTT}
        ifft!::ITT        # transforms
         fft!::FTT
     kforcing::Int        # forcing wave number
+           γ::Float64    # forcing strength
            β::Vector{Float64}    # used for time step selection based on CFL number
 end
 
@@ -18,6 +19,7 @@ function ForwardExplicitTerm(n::Int,
                              m::Int,
                              kforcing::Int,
                              α::Real,
+                             γ::Real,
                              flags::UInt32,
                              ::Type{S}) where {S}
     # stupidity check
@@ -33,7 +35,7 @@ function ForwardExplicitTerm(n::Int,
 
     # construct object. Initialise β to a small value, so we do a small first time step
     ForwardExplicitTerm{n, m, eltype(FTCache), eltype(FCache),
-                 typeof(ifft!), typeof(fft!)}(FTCache, FCache, ifft!, fft!, kforcing, [1e-6])
+                 typeof(ifft!), typeof(fft!)}(FTCache, FCache, ifft!, fft!, kforcing, γ, [1e-6])
 end
 
 # Adhere to callable interface for IMEXRKCB
@@ -68,8 +70,8 @@ function (Eq::ForwardExplicitTerm{n, m, FT})(t::Real,
     add == true ? (Eq.fft!(U, u); dΩdt .+= U) : Eq.fft!(dΩdt, u)
 
     # ~~~ FORCING TERM ~~~
-    dΩdt[WaveNumber( Eq.kforcing, 0)] -= Eq.kforcing/2
-    dΩdt[WaveNumber(-Eq.kforcing, 0)] -= Eq.kforcing/2
+    dΩdt[WaveNumber( Eq.kforcing, 0)] -= Eq.γ * Eq.kforcing/2
+    dΩdt[WaveNumber(-Eq.kforcing, 0)] -= Eq.γ * Eq.kforcing/2
 
     return nothing
 end
@@ -92,11 +94,12 @@ function ForwardEquation(n::Int,
                          Re::Real,
                          kforcing::Int=4,
                          α::Real=1,
+                         γ::Real=1,
                          flags::UInt32=FFTW.EXHAUSTIVE,
                          forcing::AbstractForcing=DummyForcing(n),
                          ::Type{S}=Float64) where {S<:Real}
     imTerm = ImplicitTerm(Re)
-    exTerm = ForwardExplicitTerm(n, m, kforcing, α, flags, S)
+    exTerm = ForwardExplicitTerm(n, m, kforcing, α, γ, flags, S)
     ForwardEquation{n, m, 
                     typeof(imTerm), 
                     typeof(exTerm), 
