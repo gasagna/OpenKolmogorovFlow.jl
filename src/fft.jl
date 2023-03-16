@@ -24,6 +24,19 @@ function _apply_mask(U::AbstractFTField{n, m, T}) where {n, m, T}
     return U
 end
 
+# ensure field satisfies symmetry at all times
+function _apply_symmetry(U::AbstractFTField{n, m, T}) where {n, m, T}
+    @inbounds @simd for k = 1:m
+        pos = U.data[k+1, 1]
+        neg = U.data[2*(m+1)-k+1, 1]
+        _re = 0.5 * (real(pos) + real(neg))
+        _im = 0.5 * (imag(pos) - imag(neg))
+        U.data[k+1, 1] = _re + im * _im 
+        U.data[2*(m+1)-k+1, 1] = _re - im * _im 
+    end
+    return U
+end
+
 # Return the smallest `m` that avoids aliasing on a `FTField{n, ⋅}`
 up_dealias_size(n::Int) = n + n>>1
 
@@ -44,7 +57,7 @@ end
 # callable interface
 (f::ForwardFFT!{m})(U::FTField{n, m}, u::Field{m}) where {n, m} =
     (unsafe_execute!(f.plan, parent(u), parent(U)); 
-        U .*= 1/(2m+2)^2; _apply_mask(U))
+        U .*= 1/(2m+2)^2; _apply_symmetry(_apply_mask(U)))
 
 
 # inverse transform
